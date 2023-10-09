@@ -1,0 +1,222 @@
+{
+	"resourceType": "Patient",
+	"id": "egqBHVfQlt4Bw3XGXoxVxHg3",
+	"extension": [
+		{
+			"extension": [
+				{
+					"url": "ombCategory",
+					"valueCoding": {
+						"system": "urn:oid:2.16.840.1.113883.6.238",
+						"code": "2054-5",
+						"display": "Black or African American"
+					}
+				},
+				{
+					"url": "text",
+					"valueString": "Black or African American"
+				}
+			],
+			"url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race"
+		},
+		{
+			"extension": [
+				{
+					"url": "text",
+					"valueString": "Unknown"
+				}
+			],
+			"url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity"
+		},
+		{
+			"url": "http://open.epic.com/FHIR/StructureDefinition/extension/legal-sex",
+			"valueCodeableConcept": {
+				"coding": [
+					{
+						"system": "urn:oid:1.2.840.114350.1.13.0.1.7.10.698084.130.657370.19999000",
+						"code": "male",
+						"display": "male"
+					}
+				]
+			}
+		},
+		{
+			"url": "http://hl7.org/fhir/StructureDefinition/patient-genderIdentity",
+			"valueCodeableConcept": {
+				"coding": [
+					{
+						"system": "http://hl7.org/fhir/gender-identity",
+						"code": "male",
+						"display": "male"
+					}
+				]
+			}
+		},
+		{
+			"url": "http://open.epic.com/FHIR/StructureDefinition/extension/sex-for-clinical-use",
+			"valueCodeableConcept": {
+				"coding": [
+					{
+						"system": "urn:oid:1.2.840.114350.1.13.0.1.7.10.698084.130.657370.19999000",
+						"code": "male",
+						"display": "male"
+					}
+				]
+			}
+		}
+	],
+	"identifier": [
+		{
+			"use": "usual",
+			"type": {
+				"text": "EPIC"
+			},
+			"system": "urn:oid:1.2.840.114350.1.13.0.1.7.5.737384.0",
+			"value": "E4003"
+		},
+		{
+			"use": "usual",
+			"type": {
+				"text": "EXTERNAL"
+			},
+			"system": "urn:oid:1.2.840.114350.1.13.0.1.7.2.698084",
+			"value": "Z6125"
+		},
+		{
+			"use": "usual",
+			"type": {
+				"text": "FHIR"
+			},
+			"system": "http://open.epic.com/FHIR/StructureDefinition/patient-dstu2-fhir-id",
+			"value": "TZP1AvJlIR4IZDc3myX64DDxFHjn24zSDxI1BPYXIAk4B"
+		},
+		{
+			"use": "usual",
+			"type": {
+				"text": "FHIR STU3"
+			},
+			"system": "http://open.epic.com/FHIR/StructureDefinition/patient-fhir-id",
+			"value": "egqBHVfQlt4Bw3XGXoxVxHg3"
+		},
+		{
+			"use": "usual",
+			"type": {
+				"text": "INTERNAL"
+			},
+			"system": "urn:oid:1.2.840.114350.1.13.0.1.7.2.698084",
+			"value": "     Z6125"
+		},
+		{
+			"use": "usual",
+			"type": {
+				"text": "EPI"
+			},
+			"system": "urn:oid:1.2.840.114350.1.13.0.1.7.5.737384.14",
+			"value": "203709"
+		},
+		{
+			"use": "usual",
+			"type": {
+				"text": "MYCHARTLOGIN"
+			},
+			"system": "urn:oid:1.2.840.114350.1.13.0.1.7.3.878082.110",
+			"value": "FHIRELIJAH"
+		},
+		{
+			"use": "usual",
+			"type": {
+				"text": "WPRINTERNAL"
+			},
+			"system": "urn:oid:1.2.840.114350.1.13.0.1.7.2.878082",
+			"value": "740"
+		}
+	],
+	"active": true,
+	"name": [
+		{
+			"use": "old",
+			"text": "DAVIS,ELIJAH",
+			"family": "Davis",
+			"given": [
+				"Elijah"
+			]
+		},
+		{
+			"use": "official",
+			"text": "Elijah John Davis",
+			"family": "Davis",
+			"given": [
+				"Elijah",
+				"John"
+			]
+		},
+		{
+			"use": "usual",
+			"text": "Elijah John Davis",
+			"family": "Davis",
+			"given": [
+				"Elijah",
+				"John"
+			]
+		}
+	],
+	"telecom": [
+		{
+			"system": "phone",
+			"value": "608-555-5555",
+			"use": "mobile"
+		}
+	],
+	"gender": "male",
+	"birthDate": "1993-08-18",
+	"deceasedBoolean": false,
+	"address": [
+		{
+			"use": "old",
+			"line": [
+				"231 Aspen Street"
+			],
+			"city": "MADISON",
+			"district": "DANE",
+			"state": "WI",
+			"postalCode": "53791",
+			"country": "US"
+		},
+		{
+			"use": "home",
+			"line": [
+				"231 Aspen Street"
+			],
+			"city": "MADISON",
+			"district": "DANE",
+			"state": "WI",
+			"postalCode": "53791",
+			"country": "US",
+			"period": {
+				"start": "2019-05-24"
+			}
+		}
+	],
+	"maritalStatus": {
+		"text": "Single"
+	},
+	"communication": [
+		{
+			"language": {
+				"coding": [
+					{
+						"system": "urn:ietf:bcp:47",
+						"code": "en",
+						"display": "English"
+					}
+				],
+				"text": "English"
+			},
+			"preferred": true
+		}
+	],
+	"managingOrganization": {
+		"reference": "Organization/enRyWnSP963FYDpoks4NHOA3",
+		"display": "Epic Hospital System"
+	}
+}

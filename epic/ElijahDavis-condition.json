@@ -1,0 +1,291 @@
+{
+	"resourceType": "Bundle",
+	"type": "searchset",
+	"total": 4,
+	"link": [
+		{
+			"relation": "self",
+			"url": "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4/Condition?subject=egqBHVfQlt4Bw3XGXoxVxHg3"
+		}
+	],
+	"entry": [
+		{
+			"link": [
+				{
+					"relation": "self",
+					"url": "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4/Condition/ePJugUlqfIbIyVVibZWYmHQ3"
+				}
+			],
+			"fullUrl": "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4/Condition/ePJugUlqfIbIyVVibZWYmHQ3",
+			"resource": {
+				"resourceType": "Condition",
+				"id": "ePJugUlqfIbIyVVibZWYmHQ3",
+				"clinicalStatus": {
+					"coding": [
+						{
+							"system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
+							"version": "4.0.0",
+							"code": "active",
+							"display": "Active"
+						}
+					],
+					"text": "Active"
+				},
+				"verificationStatus": {
+					"coding": [
+						{
+							"system": "http://terminology.hl7.org/CodeSystem/condition-ver-status",
+							"version": "4.0.0",
+							"code": "confirmed",
+							"display": "Confirmed"
+						}
+					],
+					"text": "Confirmed"
+				},
+				"category": [
+					{
+						"coding": [
+							{
+								"system": "http://terminology.hl7.org/CodeSystem/condition-category",
+								"code": "problem-list-item",
+								"display": "Problem List Item"
+							}
+						],
+						"text": "Problem List Item"
+					}
+				],
+				"severity": {
+					"text": "High"
+				},
+				"code": {
+					"coding": [
+						{
+							"system": "http://hl7.org/fhir/sid/icd-10-cm",
+							"code": "J18.1"
+						},
+						{
+							"system": "http://snomed.info/sct",
+							"code": "301004001"
+						}
+					],
+					"text": "Right upper lobe pneumonia"
+				},
+				"subject": {
+					"reference": "Patient/egqBHVfQlt4Bw3XGXoxVxHg3",
+					"display": "Davis, Elijah John"
+				},
+				"onsetPeriod": {
+					"start": "2019-05-24",
+					"end": "2019-05-24"
+				},
+				"recordedDate": "2019-05-24"
+			},
+			"search": {
+				"mode": "match"
+			}
+		},
+		{
+			"link": [
+				{
+					"relation": "self",
+					"url": "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4/Condition/epRHrfjlZHEPIuhqy74k3CQ3"
+				}
+			],
+			"fullUrl": "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4/Condition/epRHrfjlZHEPIuhqy74k3CQ3",
+			"resource": {
+				"resourceType": "Condition",
+				"id": "epRHrfjlZHEPIuhqy74k3CQ3",
+				"clinicalStatus": {
+					"coding": [
+						{
+							"system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
+							"version": "4.0.0",
+							"code": "active",
+							"display": "Active"
+						}
+					],
+					"text": "Active"
+				},
+				"verificationStatus": {
+					"coding": [
+						{
+							"system": "http://terminology.hl7.org/CodeSystem/condition-ver-status",
+							"version": "4.0.0",
+							"code": "confirmed",
+							"display": "Confirmed"
+						}
+					],
+					"text": "Confirmed"
+				},
+				"category": [
+					{
+						"coding": [
+							{
+								"system": "http://terminology.hl7.org/CodeSystem/condition-category",
+								"code": "problem-list-item",
+								"display": "Problem List Item"
+							}
+						],
+						"text": "Problem List Item"
+					}
+				],
+				"code": {
+					"coding": [
+						{
+							"system": "http://hl7.org/fhir/sid/icd-10-cm",
+							"code": "S42.309A"
+						},
+						{
+							"system": "http://snomed.info/sct",
+							"code": "23406007"
+						}
+					],
+					"text": "Broken arm"
+				},
+				"subject": {
+					"reference": "Patient/egqBHVfQlt4Bw3XGXoxVxHg3",
+					"display": "Davis, Elijah John"
+				},
+				"onsetPeriod": {
+					"start": "2019-05-24",
+					"end": "2019-05-24"
+				},
+				"recordedDate": "2019-05-24"
+			},
+			"search": {
+				"mode": "match"
+			}
+		},
+		{
+			"link": [
+				{
+					"relation": "self",
+					"url": "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4/Condition/e16E4.L7d912QD0X7jyerEqeKqeCKXUXbc6kTLNlAG4EXmCj5e2oafWK8pLPUG.yyJ8l6I1shvV0k6Cl2qCiffQ3"
+				}
+			],
+			"fullUrl": "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4/Condition/e16E4.L7d912QD0X7jyerEqeKqeCKXUXbc6kTLNlAG4EXmCj5e2oafWK8pLPUG.yyJ8l6I1shvV0k6Cl2qCiffQ3",
+			"resource": {
+				"resourceType": "Condition",
+				"id": "e16E4.L7d912QD0X7jyerEqeKqeCKXUXbc6kTLNlAG4EXmCj5e2oafWK8pLPUG.yyJ8l6I1shvV0k6Cl2qCiffQ3",
+				"category": [
+					{
+						"coding": [
+							{
+								"system": "http://terminology.hl7.org/CodeSystem/condition-category",
+								"code": "encounter-diagnosis",
+								"display": "Encounter Diagnosis"
+							}
+						],
+						"text": "Encounter Diagnosis"
+					},
+					{
+						"coding": [
+							{
+								"system": "http://open.epic.com/FHIR/StructureDefinition/condition-category",
+								"code": "visit-diagnosis",
+								"display": "Visit Diagnosis"
+							}
+						],
+						"text": "Visit Diagnosis"
+					}
+				],
+				"code": {
+					"coding": [
+						{
+							"system": "http://snomed.info/sct",
+							"code": "23406007",
+							"display": "Fracture of upper limb (disorder)"
+						},
+						{
+							"system": "http://hl7.org/fhir/sid/icd-9-cm/diagnosis",
+							"code": "818.1",
+							"display": "Broken arm, left, open, initial encounter"
+						},
+						{
+							"system": "http://hl7.org/fhir/sid/icd-10-cm",
+							"code": "S42.302B",
+							"display": "Broken arm, left, open, initial encounter"
+						}
+					],
+					"text": "Broken arm, left, open, initial encounter"
+				},
+				"subject": {
+					"reference": "Patient/egqBHVfQlt4Bw3XGXoxVxHg3",
+					"display": "Davis, Elijah John"
+				},
+				"encounter": {
+					"reference": "Encounter/emhwuharfnf8VhCQg97qP7Q3",
+					"identifier": {
+						"use": "usual",
+						"system": "urn:oid:1.2.840.114350.1.13.0.1.7.3.698084.8",
+						"value": "27554"
+					},
+					"display": "Office Visit"
+				},
+				"evidence": [
+					{}
+				]
+			},
+			"search": {
+				"mode": "match"
+			}
+		},
+		{
+			"link": [
+				{
+					"relation": "self",
+					"url": "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4/Condition/e16E4.L7d912QD0X7jyerEuIXdFK17xkJE1SUgwSbbwc3"
+				}
+			],
+			"fullUrl": "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4/Condition/e16E4.L7d912QD0X7jyerEuIXdFK17xkJE1SUgwSbbwc3",
+			"resource": {
+				"resourceType": "Condition",
+				"id": "e16E4.L7d912QD0X7jyerEuIXdFK17xkJE1SUgwSbbwc3",
+				"category": [
+					{
+						"coding": [
+							{
+								"system": "http://open.epic.com/FHIR/StructureDefinition/condition-category",
+								"code": "reason-for-visit",
+								"display": "Reason for Visit"
+							}
+						],
+						"text": "Reason for Visit"
+					}
+				],
+				"code": {
+					"coding": [
+						{
+							"system": "urn:oid:1.2.840.114350.1.13.0.1.7.2.728286",
+							"code": "160050",
+							"display": "Arm Injury"
+						}
+					],
+					"text": "Arm Injury"
+				},
+				"subject": {
+					"reference": "Patient/egqBHVfQlt4Bw3XGXoxVxHg3",
+					"display": "Davis, Elijah John"
+				},
+				"encounter": {
+					"reference": "Encounter/emhwuharfnf8VhCQg97qP7Q3",
+					"identifier": {
+						"use": "usual",
+						"system": "urn:oid:1.2.840.114350.1.13.0.1.7.3.698084.8",
+						"value": "27554"
+					},
+					"display": "Office Visit"
+				},
+				"recordedDate": "2019-05-24T20:10:26Z",
+				"note": [
+					{
+						"text": "patient believes arm may have been broken during basketball game"
+					}
+				]
+			},
+			"search": {
+				"mode": "match"
+			}
+		}
+	]
+}

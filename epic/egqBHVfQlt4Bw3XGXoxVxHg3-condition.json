@@ -1,0 +1,118 @@
+{
+	"resourceType": "Bundle",
+	"type": "searchset",
+	"total": 2,
+	"link": [
+		{
+			"relation": "self",
+			"url": "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/STU3/Condition?subject=egqBHVfQlt4Bw3XGXoxVxHg3"
+		}
+	],
+	"entry": [
+		{
+			"link": [
+				{
+					"relation": "self",
+					"url": "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/STU3/Condition/ePJugUlqfIbIyVVibZWYmHQ3"
+				}
+			],
+			"fullUrl": "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/STU3/Condition/ePJugUlqfIbIyVVibZWYmHQ3",
+			"resource": {
+				"resourceType": "Condition",
+				"id": "ePJugUlqfIbIyVVibZWYmHQ3",
+				"clinicalStatus": {},
+				"verificationStatus": {},
+				"category": [
+					{
+						"coding": [
+							{
+								"system": "http://hl7.org/fhir/condition-category",
+								"code": "problem-list-item",
+								"display": "Problem List Item"
+							}
+						],
+						"text": "Problem List Item"
+					}
+				],
+				"severity": {
+					"text": "High"
+				},
+				"code": {
+					"coding": [
+						{
+							"system": "http://hl7.org/fhir/sid/icd-10-cm",
+							"code": "J18.1"
+						},
+						{
+							"system": "http://snomed.info/sct",
+							"code": "301004001"
+						}
+					],
+					"text": "Right upper lobe pneumonia"
+				},
+				"subject": {
+					"reference": "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/STU3/Patient/egqBHVfQlt4Bw3XGXoxVxHg3",
+					"display": "Davis, Elijah John"
+				},
+				"onsetPeriod": {
+					"start": "2019-05-24",
+					"end": "2019-05-24"
+				}
+			},
+			"search": {
+				"mode": "match"
+			}
+		},
+		{
+			"link": [
+				{
+					"relation": "self",
+					"url": "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/STU3/Condition/epRHrfjlZHEPIuhqy74k3CQ3"
+				}
+			],
+			"fullUrl": "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/STU3/Condition/epRHrfjlZHEPIuhqy74k3CQ3",
+			"resource": {
+				"resourceType": "Condition",
+				"id": "epRHrfjlZHEPIuhqy74k3CQ3",
+				"clinicalStatus": {},
+				"verificationStatus": {},
+				"category": [
+					{
+						"coding": [
+							{
+								"system": "http://hl7.org/fhir/condition-category",
+								"code": "problem-list-item",
+								"display": "Problem List Item"
+							}
+						],
+						"text": "Problem List Item"
+					}
+				],
+				"code": {
+					"coding": [
+						{
+							"system": "http://hl7.org/fhir/sid/icd-10-cm",
+							"code": "S42.309A"
+						},
+						{
+							"system": "http://snomed.info/sct",
+							"code": "23406007"
+						}
+					],
+					"text": "Broken arm"
+				},
+				"subject": {
+					"reference": "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/STU3/Patient/egqBHVfQlt4Bw3XGXoxVxHg3",
+					"display": "Davis, Elijah John"
+				},
+				"onsetPeriod": {
+					"start": "2019-05-24",
+					"end": "2019-05-24"
+				}
+			},
+			"search": {
+				"mode": "match"
+			}
+		}
+	]
+}

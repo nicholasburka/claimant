@@ -1,0 +1,202 @@
+{
+	"resourceType": "Patient",
+	"id": "eq081-VQEgP8drUUqCWzHfw3",
+	"extension": [
+		{
+			"extension": [
+				{
+					"url": "ombCategory",
+					"valueCoding": {
+						"system": "http://hl7.org/fhir/us/core/ValueSet/omb-race-category",
+						"code": "2028-9",
+						"display": "Asian"
+					}
+				},
+				{
+					"url": "text",
+					"valueString": "Asian"
+				}
+			],
+			"url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race"
+		},
+		{
+			"extension": [
+				{
+					"url": "ombCategory",
+					"valueCoding": {
+						"system": "http://hl7.org/fhir/us/core/ValueSet/omb-ethnicity-category",
+						"code": "UNK",
+						"display": "Unknown"
+					}
+				},
+				{
+					"url": "text",
+					"valueString": "Unknown"
+				}
+			],
+			"url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity"
+		},
+		{
+			"url": "http://open.epic.com/FHIR/StructureDefinition/extension/legal-sex",
+			"valueCodeableConcept": {
+				"coding": [
+					{
+						"system": "urn:oid:1.2.840.114350.1.13.0.1.7.10.698084.130.657370.19999000",
+						"code": "male",
+						"display": "male"
+					}
+				]
+			}
+		},
+		{
+			"url": "http://open.epic.com/FHIR/StructureDefinition/extension/sex-for-clinical-use",
+			"valueCodeableConcept": {
+				"coding": [
+					{
+						"system": "urn:oid:1.2.840.114350.1.13.0.1.7.10.698084.130.657370.19999000",
+						"code": "male",
+						"display": "male"
+					}
+				]
+			}
+		}
+	],
+	"identifier": [
+		{
+			"use": "usual",
+			"type": {
+				"text": "EPIC"
+			},
+			"system": "urn:oid:1.2.840.114350.1.13.0.1.7.5.737384.0",
+			"value": "E4005"
+		},
+		{
+			"use": "usual",
+			"type": {
+				"text": "EXTERNAL"
+			},
+			"system": "urn:oid:1.2.840.114350.1.13.0.1.7.2.698084",
+			"value": "Z6127"
+		},
+		{
+			"use": "usual",
+			"type": {
+				"text": "FHIR"
+			},
+			"system": "http://open.epic.com/FHIR/StructureDefinition/patient-dstu2-fhir-id",
+			"value": "TGsj9rYGI8SV-LYYkdH1JqbxYuFGfrODXSPC6iLLYkJcB"
+		},
+		{
+			"use": "usual",
+			"type": {
+				"text": "FHIR STU3"
+			},
+			"system": "http://open.epic.com/FHIR/StructureDefinition/patient-fhir-id",
+			"value": "eq081-VQEgP8drUUqCWzHfw3"
+		},
+		{
+			"use": "usual",
+			"type": {
+				"text": "INTERNAL"
+			},
+			"system": "urn:oid:1.2.840.114350.1.13.0.1.7.2.698084",
+			"value": "     Z6127"
+		},
+		{
+			"use": "usual",
+			"type": {
+				"text": "EPI"
+			},
+			"system": "urn:oid:1.2.840.114350.1.13.0.1.7.5.737384.14",
+			"value": "203711"
+		},
+		{
+			"use": "usual",
+			"type": {
+				"text": "MYCHARTLOGIN"
+			},
+			"system": "urn:oid:1.2.840.114350.1.13.0.1.7.3.878082.110",
+			"value": "FHIRDERRICK"
+		},
+		{
+			"use": "usual",
+			"type": {
+				"text": "WPRINTERNAL"
+			},
+			"system": "urn:oid:1.2.840.114350.1.13.0.1.7.2.878082",
+			"value": "738"
+		}
+	],
+	"active": true,
+	"name": [
+		{
+			"use": "official",
+			"text": "Derrick Lin",
+			"family": "Lin",
+			"given": [
+				"Derrick"
+			]
+		},
+		{
+			"use": "usual",
+			"text": "Derrick Lin",
+			"family": "Lin",
+			"given": [
+				"Derrick"
+			]
+		}
+	],
+	"telecom": [
+		{
+			"system": "phone",
+			"value": "785-555-5555",
+			"use": "home"
+		},
+		{
+			"system": "phone",
+			"value": "785-666-6666",
+			"use": "work"
+		}
+	],
+	"gender": "male",
+	"birthDate": "1973-06-03",
+	"deceasedBoolean": false,
+	"address": [
+		{
+			"use": "home",
+			"line": [
+				"7324 Roosevelt Ave"
+			],
+			"city": "INDIANAPOLIS",
+			"district": "MARION",
+			"state": "IN",
+			"postalCode": "46201",
+			"country": "US",
+			"period": {
+				"start": "2019-05-24"
+			}
+		}
+	],
+	"maritalStatus": {
+		"text": "Married"
+	},
+	"communication": [
+		{
+			"language": {
+				"coding": [
+					{
+						"system": "urn:ietf:bcp:47",
+						"code": "en",
+						"display": "English"
+					}
+				],
+				"text": "English"
+			},
+			"preferred": true
+		}
+	],
+	"managingOrganization": {
+		"reference": "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/STU3/Organization/enRyWnSP963FYDpoks4NHOA3",
+		"display": "Epic Hospital System"
+	}
+}

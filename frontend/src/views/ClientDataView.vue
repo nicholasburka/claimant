@@ -2,49 +2,75 @@
     
     <div id="container" class="column">
         <div id="client-name">
-            <h3>Client: {{ currentClient }}</h3>
+            <h3 style="margin-bottom: 0">Client: {{ currentClient }}</h3>
+            <span style="position: absolute;margin-top: 0; align-text: left; left: 0px;">Num Explanation of Benefits: {{ claims.length }}</span>
         </div>
         <div id="json-popup" class="inactive">
             <code id="json-container"></code>
             <span v-on:click="hideJson()" style="font-size: 24px">X</span>
         </div>
-        <div class="row buttons" style="">
+        <div class="row buttons" style="margin-top: 2vh;">
             <span v-on:click="sortByProvider()">sort by provider&nbsp;&nbsp;&nbsp;</span>
             <span v-on:click="sortByDate()">sort by date&nbsp;&nbsp;&nbsp;</span>
             <span v-on:click="reverseClaims()">reverse list</span>
+            <input type="text" v-model="search" @keyup.enter="submitSearch(search)"/>
+            <button v-on:click="submitSearch(search)">Search</button>
+            <button v-on:click="dismissSearch()">Dismiss</button>
+            <input type="checkbox" v-model="useUMLS"/>Search with medical synonyms
+            <span v-if="searchingUMLS"></span>
         </div>
         <br>
-        <div id="claims" class="claims column">
-            <div class="claim row" :key="claim" v-for="claim in claims" :id="claim.fullUrl">
-                <div><span v-on:click.self="this.jsonTree(claim)">EoB: </span>
-                    <span v-if="claim.resource.item[0]" v-on:click.self="this.jsonTree(claim)">{{ claim.resource.item[0].servicedPeriod.start }}</span>
-                    <span v-else v-on:click.self="this.jsonTree(claim)">{{ " " + claim.resource.item.servicedPeriod.start  +", "}}</span>
-                    <span v-on:click="showProvider(claim.resource.provider.reference)">{{ " " + this.getProvider(claim.resource.provider.reference) + ", "}}</span>
-                    <div :id="claim.fullUrl + service" class="service" v-on:click.self="this.jsonTree(claim)">
-                        <div v-if="claim.resource.item[0]">
-                            <span v-for="item in claim.resource.item" :key="item">
-                                {{ item.productOrService.text + ", "}}
-                            </span>
+        <div id="all-recs" class="row">
+            <div id="claims" class="claims column">
+                <div class="claim row" :key="claim" v-for="claim in currentRecords" :id="claim.fullUrl">
+                    <div><span v-on:click.self="this.showEob(claim)">EoB {{ claim.index }}: </span>
+                        <span v-if="claim.resource.item[0]" v-on:click.self="this.showEob(claim)">{{ claim.resource.item[0].servicedPeriod.start }}</span>
+                        <span v-else v-on:click.self="this.showEob(claim)">{{ " " + claim.resource.item.servicedPeriod.start  +", "}}</span>
+                        <span class="provider" v-on:click="showProvider(claim.resource.provider.reference)">{{ " " + this.getProvider(claim.resource.provider.reference) + ", "}}</span>
+                        <div :id="claim.fullUrl + service" class="service" v-on:click.self="this.showEob(claim)">
+                            <div v-if="claim.resource.item[0]">
+                                <span style="color:purple" v-on:click.self="this.showEob(claim)">Products/Services claimed: </span>
+                                <span v-for="item in claim.resource.item" :key="item" v-on:click.self="this.showEob(claim)">
+                                    {{ item.productOrService.text + ", "}}
+                                </span>
+                            </div>
+                            <span v-else v-on:click.self="this.showEob(claim)">{{ claim.resource.item.productOrService.text }}</span>
                         </div>
-                        <span v-else v-on:click.self="this.jsonTree(claim)">{{ claim.resource.item.productOrService.text }}</span>
+                        <!--<span style="font-size:5px" :key="item" v-for="item in claim.resource.item">{{ item.servicedPeriod.start + "   "}}</span>-->
+                        <!--<code :id="claim.fullUrl + 'json'" class="inactive">{{JSON.stringify(claim)}}</code>
+                        -->
                     </div>
-                    <!--<span style="font-size:5px" :key="item" v-for="item in claim.resource.item">{{ item.servicedPeriod.start + "   "}}</span>-->
-                    <!--<code :id="claim.fullUrl + 'json'" class="inactive">{{JSON.stringify(claim)}}</code>
-                    -->
+                </div>
+            </div>
+            <!--<div v-if="relatedRecords[0]">
+            <div id="related-records"  class="column">
+                <div v-for="re in relatedRecords" :key="re">
+                    <div v-on:click="displayRecord(re)">
+                        {{ re.resourceType }}
+                    </div>
+                </div>
+            </div>
+        </div>-->
+
+            <div id="related-records" class="column">
+                <div v-if="currentClaim.refs">
+                    <br>Found associated records:
+                    <ul v-on:click="showRecord(record)" class="record" :key="record" v-for="record in currentClaim.refs" :id="record">
+                        <li>
+                            <div v-if="record.resourceType === 'ExplanationOfBenefit'"><span style="color: green">EOB</span></div>
+                            <div v-else-if="record.resourceType === 'Encounter'"><span style="color: blue">Encounter</span></div>
+                            <div v-else><span>{{ record.resourceType }}</span></div>
+                        </li>
+                        
+                        <!--                    
+                            //on click, display the json object
+                            //on click when dropdown === active, remove the active class
+                        -->
+                    </ul>
                 </div>
             </div>
         </div>
-
-        <!----<div id="records" class="column">
-            <div class="record" :key="record" v-for="record in records" :id="record">
-                <div v-if="record.resource.resourceType === 'ExplanationOfBenefit'"><span style="color: green">EOB</span></div>
-                <div v-else-if="record.resource.resourceType === 'Encounter'"><span style="color: blue">Encounter</span></div>
-                <div v-else><span>{{ record.resource.resourceType }}</span></div>
-
-                //on click, display the json object
-                //on click when dropdown === active, remove the active class
-            </div>
-        </div>-->
+        
     </div>
     
     
@@ -54,6 +80,7 @@
 <script>
 import {mapState} from 'vuex'
 import jsonview from '@pgrabovets/json-view'
+import d3 from 'd3'
 //import Vue from 'vue'
 
 
@@ -66,15 +93,20 @@ export default {
             records: state => state.records, //miscRecords - exclusive from other categories
             providers: state => state.providers,
             allRecords: state => state.allRecords,
-            allRecordsById: state => state.allRecordsById
-            //currentRecords: claims
+            allRecordsById: state => state.allRecordsById,
+            currentRecords: state => state.currentRecords,
+            searchingUMLS: state => state.searchingUMLS,
+            medicalSynonyms: state => state.currentSearchMedicalSynonyms
         })
     },
     data: function() {
         return {
             sortBy: "date", //or "provider"
             displayType: "claims", //or "records" or "all"
-            currentClaimUrl: ""
+            currentClaimUrl: "",
+            relatedRecords: [],
+            currentClaim: {},
+            medicalSynonyms: []
             //currentRecords: claims
         }
     },
@@ -98,21 +130,29 @@ export default {
             //document.getElementById("json-container").innerText = JSON.stringify(claim, " ", 1);
             console.log(node);
         },
-        jsonTree(data) {
-            let lastNode = document.getElementById(this.currentClaimUrl);
-            lastNode ? lastNode.style.color = "black" : undefined;
-            this.currentClaimUrl = data.fullUrl;
-            let docEl =  document.getElementById(this.currentClaimUrl)
-            if(docEl) {
-              docEl.style.color = "red";  
+        jsonTree(data, claim=true) {
+            if (claim) {
+                let lastNode = document.getElementById(this.currentClaimUrl);
+                lastNode ? lastNode.style.color = "black" : undefined;
+                lastNode ? lastNode.style.backgroundColor = "white" : undefined;
+                this.currentClaimUrl = data.fullUrl;
+                let docEl =  document.getElementById(this.currentClaimUrl)
+                if(docEl) {
+                docEl.style.color = "red"; 
+                docEl.style.backgroundColor = "gray"; 
+                }
             }
+            
             //jsonview.destroy
             document.querySelector('#json-container').innerHTML = '';
             let tree = undefined;
-            if(data.resource && (!data.organization)) {
+            if(data.resource && (!data.organization) && (!data.refs)) {
                 tree = jsonview.create(data.resource); //https://github.com/pgrabovets/json-view
                 jsonview.render(tree, document.querySelector('#json-container'));
                 jsonview.expand(tree);
+                let t2 = d3.tree(data.resource);
+                console.log("trying d3");
+                console.log(t2);
             } else {
                 tree = jsonview.create(data);
                 jsonview.render(tree, document.querySelector('#json-container'));
@@ -126,8 +166,8 @@ export default {
         },
         hideJson() {
             document.getElementById('json-popup').classList.replace('active', 'inactive');
-            let lastNode = document.getElementById(this.currentClaimUrl);
-            lastNode ? lastNode.style.color = "black" : undefined;
+            //let lastNode = document.getElementById(this.currentClaimUrl);
+            //lastNode ? lastNode.style.color = "black" : undefined;
         },
         providerNameString(providerResource) {
             let provNameObj = providerResource.name[0];
@@ -156,6 +196,15 @@ export default {
             //let recUrls = this.allRecords.filter((r) => //)
             //for each url, get the record that matches
             //return
+        },
+        showEob(eob) {
+            this.jsonTree(eob);
+            this.currentClaim = eob;
+            this.relatedRecords = eob.refs;
+            //**this.relatedRecords = 
+        },
+        showRecord(rec) {
+            this.jsonTree(rec, false);
         },
         getProvider(ref) {
             //console.log(claim);
@@ -187,7 +236,29 @@ export default {
         },
         reverseClaims() {
             this.$store.commit('reverse', 'claims');
-        }
+        },
+        dismissSearch() {
+            this.$store.commit('dismissSearch');
+            this.search = "";
+            this.searching = false;
+        },
+        async submitSearch(search) {
+            let currSearch = this.search;
+            this.dismissSearch();
+            this.search = currSearch;
+            //show only claims for which 
+            console.log(search);
+            //this.currentRecords = this.claims[0];
+            if (this.useUMLS) {
+                console.log("using umls to search");
+                await this.$store.dispatch('getMedicalSynonyms', this.search);
+                //this.$store.commit('searchWithUMLSCurrentRecords', search);
+            } else {
+                this.$store.commit('searchCurrentRecords', search);
+                this.searching = true;
+                this.currentClaim = {};
+            }
+        },
     },
     created() {
         this.$store.dispatch('loadTestClientFromDisk');
@@ -214,11 +285,20 @@ html {
   /*justify-content: space-around;*/
 }
 .claim {
-    align-self: flex-start;
     text-align: left;
     left: 0px;
     justify-content: left !important;
-    max-width: 70vw;
+    flex: 1;
+    display: flex;
+}
+.claim:hover {
+    color: lightblue;
+}
+.provider {
+    color: green;
+}
+.provider:hover {
+    color: lightgreen;
 }
 .buttons span {
     border-radius: 10px;
@@ -230,10 +310,18 @@ html {
     align-self: center;
 }
 #claims {
-    padding-top: 250px;
+    display: flex;
+    padding-top: 0vw;/*calc(30vw + 10vh);*/
+    font-size: 2vw;
     max-height: 60vh;
+    min-height: min-content;
     width: 70vw;
-    overflow-y: scroll;
+    overflow: auto;
+}
+#related-records {
+    max-height: 60vh;
+    width: 30vw;
+    left: 60vw;
 }
 #records {
     max-height: 60vh;
@@ -291,6 +379,6 @@ code {
     color: rgb(255, 21, 0);
 }
 .service {
-    font-size: 10px;
+    font-size: 1.5vw;
 }
 </style>

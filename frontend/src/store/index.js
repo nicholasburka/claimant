@@ -73,8 +73,8 @@ function getAllRefsWithinResource(resource) {
   //medicalConcepts: array of objects with
   //name, relationType, source, and uri
   function analyzeClaim(claim, medicalConcepts) {
-    const prepositions = ["at", "of", "on", "to", "but", "with", "a", "an", "in", "pt", "ord", "-", "13", "procedure", "pn", "con", "de", "for"];
-    const medically_unspecific_words = ["history"];
+    const prepositions = ["at", "of", "on", "to", "but", "with", "a", "an", "in", "pt", "ord", "-", "13", "pn", "con", "de", "for", "nos", "and"];
+    const medically_unspecific_words = ["history", "general", "disease", "diseases", "human", "procedure", "addition", "additional", "code"];
     console.log("analyzeClaim: analyzing claim with medicalConcepts");
     //console.log(claim);
     //console.log(medicalConcepts);
@@ -92,13 +92,14 @@ function getAllRefsWithinResource(resource) {
     let analysisObj = {};
     analysisObj.synonyms = medicalConcepts.map((concept) => {concept.name = concept.name.toLowerCase(); return concept});
     analysisObj.matches = {};
+    let uniqueMedicalConceptWords = {};
     medicalConcepts.forEach((concept) => {
-      let words = concept.name.split(/[\s,/]+/).map((word) => word.toLowerCase());
-      console.log(words);
+      let words = concept.name.split(/[\s,()/]+/).map((word) => word.toLowerCase());
       //filter out two letter words?? *IV*
       words = words.filter((word) => word.length > 2); 
       //filter out medically unspecific words
-      words = words.filter((word) => medically_unspecific_words.indexOf(word) >= 0);
+      words = words.filter((word) => medically_unspecific_words.indexOf(word) < 0);
+      console.log(words);
       //console.log("analyzing concept");
       //console.log(words);
       //creates a dictionary of every word in every concept
@@ -106,21 +107,31 @@ function getAllRefsWithinResource(resource) {
         //skip prepositions
         if (prepositions.indexOf(word) >= 0) {
           return;
+        } else {
+          if (!uniqueMedicalConceptWords[word]) {
+            uniqueMedicalConceptWords[word] = 1;
+          } else {
+            uniqueMedicalConceptWords[word] += 1; 
+          }
         }
         //check if that concept word is in the claim text
         //if so, add to array of concepts for that word
         if (allClaimText.indexOf(word) >= 0) {
+          console.log("found " + word);
           if (analysisObj.matches[word]) {
+            console.log("old word");
             if (analysisObj.matches[word].indexOf(concept.name)===-1) {
               analysisObj.matches[word].push(concept);
             }
           } else {
-            console.log("found " + word);
+            console.log("new word");
             analysisObj.matches[word] = [concept];
           }
         }
       })
     })
+    analysisObj.uniqueMedicalConceptWords = uniqueMedicalConceptWords;
+    console.log(uniqueMedicalConceptWords);
     //console.log("analysis obj: ");
     //console.log(analysisObj);
     return analysisObj;
@@ -158,6 +169,8 @@ export default createStore({
         name: "Youlanda Hettinger",
         dataUrl: "../../data/YoulandaHettinger/Youlanda785_Hettinger594_7fe3fe78-f363-4c13-95ae-a05df266448a"
       }],
+    oneUpClientId: "f987107a279a13583cc6feeb0e28ec0c",
+    oneUpAccessToken: "",
     claims: [],
     records: [],
     providers: [],
@@ -394,6 +407,9 @@ export default createStore({
     }*/
   },
   actions: {
+   /*async getAccessTokenOneUp() {
+      const authUrl = `https://auth.1updemohealthplan.com/oauth2/authorize/test?client_id=${this.oneUpClientId}&scope=user/*.read&redirect_uri=${redirect_uri}`
+    },*/
     async getMedicalSynonyms({commit}, seedTerm) {
       console.log("getting syn with seed term: " + seedTerm);
       //should either only get the synonyms or search and change the name

@@ -23,29 +23,41 @@ import {mapState} from 'vuex'
 export default {
     computed: {
         ...mapState({
-            client: state => state.currentClient
+            client: state => state.currentClient,
+            oneUpClientId: state => state.oneUpClientId
         })
     },
     methods: {
-        requestData(clientName) {
+        async requestData(clientName) {
+            let oneUpProviderId = "";
             switch (clientName) {
                 case "Donna Dobson": {
                     //go to Veragidm
-                }/*
-                case "Wilma Smart" {
+                    oneUpProviderId = 32;
+                    break;
+                }
+                case "Wilma Smart": {
                     //Cerner
+                    oneUpProviderId = 4707;
+                    break;
                 }
-                case "Fhir Jason" {
+                case "Fhir Jason": {
                     //Epic
+                    oneUpProviderId = 4706;
+                    break;
                 }
-                case "BB User" {
+                case "BB User": {
                     //Medicare
+                    oneUpProviderId = 4748;
+                    break;
                 }
-                case "Adult Female" {
+                /*case "Adult Female" {
                     //eClincalWorks
+                    //test environment unavailable per 1up https://docs.1up.health/help-center/Content/en-US/get-started/fhir-test-credentials.html
                 }*/
             }
-
+            const reqUrl = `https://api.1up.health/connect/system/clinical/${oneUpProviderId}?client_id=${this.oneUpClientId}&access_token=${this.oneUpAccessToken}`;
+            await fetch(reqUrl);
         }
     }
 }

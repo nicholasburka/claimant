@@ -2,16 +2,22 @@
     <div>
         <h3>Get Data - {{ client.name }}</h3>
         <!--upload box-->
-        <div id="upload div">
-            <p>(in development - not working) upload a FHIR R4 JSON file for the current client(additional filetypes coming soon)</p>
-            <p>the file will be stored in your browser's local storage. we will only store anonymized metadata about search and analyses that you choose to share to help us build our product.</p>
-            <input id="fileInput" type="file">
+        <div id="upload div" class="column">
+            <p>(in development - basic functionality works) upload a FHIR R4 JSON file for the current client (additional filetypes coming soon)</p>
+            <p>the file will be stored in your browser's local storage - only search terms will be transmitted online.</p> <!--we will only store anonymized metadata about search and analyses that you choose to share to help us build our product.</p>-->
+            <input id="fileInput" type="file" class="row">
+            <button v-on:click="readFile()" id="uploadSubmit" type="button" class="row">Submit JSON</button>
+            <h3 v-if="uploadedJson && fhirResourceType">Detected FHIR Resource of Type: {{ fhirResourceType }} </h3>
+            <h3 v-if="detectedPatientName">Patient: {{ detectedPatientName }}</h3>
+            <h3 v-if="numRecords">Record count: {{ numRecords }}</h3>
+            <h3 v-if="recordTypes">Record types: {{ recordCounts }}</h3>
+            <button v-if="uploadedJson && fhirResourceType" v-on:click="setClient()">Confirm & Upload as New Client</button>
         </div>
         <!--1up explanation-->
-        <div id="1up">
+        <!--<div id="1up">
             <p>the below link will route you to the 1up sandbox for the associated provider for your client</p>
             <a>_to be filled in_</a>
-        </div>
+        </div>-->
         <!--1up links-->
         <!--1up link => consent page => data to express server => refresh the page in 5 seconds and check if the data's there-->
     </div>
@@ -19,6 +25,12 @@
 
 <script>
 import {mapState} from 'vuex'
+import {levenshtein} from 'string-comparison'
+//import { thresholdSturges } from 'd3';
+
+function similarNames(name1, name2) {
+    return levenshtein.similarity(name1, name2) > .55;
+}
 
 export default {
     computed: {
@@ -26,6 +38,12 @@ export default {
             client: state => state.currentClient,
             oneUpClientId: state => state.oneUpClientId
         })
+    },
+    data: function() {
+        return {
+            uploadedJson: {},
+            fhirResourceType: ""
+        }
     },
     methods: {
         async requestData(clientName) {
@@ -58,6 +76,102 @@ export default {
             }
             const reqUrl = `https://api.1up.health/connect/system/clinical/${oneUpProviderId}?client_id=${this.oneUpClientId}&access_token=${this.oneUpAccessToken}`;
             await fetch(reqUrl);
+        },
+        getPatientNameFromPatientRec(pRec) {
+            if (!pRec.resource.name) {
+                return "";
+            } else 
+            //the name entry has cardinality 0..* https://www.hl7.org/fhir/patient.html
+            //so account for possibility of array as well as single entry
+            if (pRec.resource.name[0]) {
+                return pRec.resource.name[0].given + " " + pRec.resource.name[0].family;
+            } else { 
+                return pRec.resource.name.given + " " + pRec.resource.name.family;
+            }
+        },
+        getPatientNameFromBundle(bundle) {
+            let patientRecs = bundle.entry.filter((obj) => obj.resource.resourceType.toLowerCase() === "patient");
+            if (patientRecs.length > 1) {
+                //check that patients have the same name
+                const name = this.getPatientNameFromPatientRec(patientRecs[0]);
+                patientRecs.forEach((pat) => {
+                    var currName = this.getPatientNameFromPatientRec(pat);
+                    if (!currName === name) {
+                        if (similarNames(currName, name)) {
+                            console.log("**Different name but similar");
+                            //**should send to server logs
+                        }
+                        //check similarity & report differences
+                        //**unit test this
+                        throw new Error("different patient names within the same bundle: " + name + ", " + currName);
+                    }
+                })
+                return name;
+            } else if (patientRecs.length === 0) {
+                throw new Error("no patient record found in bundle");
+            } else {
+                return this.getPatientNameFromPatientRec(patientRecs[0]);
+            }
+            //check list of clients for patient with that name or similar
+        },
+        getRecordTypesInBundle(bundle) {
+            var recordTypes = [];
+            var recordCounts = {}
+            bundle.entry.map((obj) => {
+                let typ = obj.resource.resourceType; 
+                if (recordTypes.indexOf(typ) < 0) {
+                    recordTypes.push(typ);
+                    recordCounts[typ] = 1;
+                } else {
+                    recordCounts[typ] += 1;
+                }
+            });
+            return {recordTypes, recordCounts};
+        },
+        async readFile() {
+            let inputFile = document.querySelector("input").files[0];
+            const fileReader = new FileReader();
+            //https://developer.mozilla.org/en-US/docs/Web/API/FileReader/FileReader
+            fileReader.onload = (evt) => {
+                console.log("file reader on load");
+                let text = evt.target.result;
+                let json = JSON.parse(text);
+                console.log(json.resourceType);
+                console.log(json);
+                if (json.resourceType) {
+                    this.uploadedJson = json;
+                    this.fhirResourceType = json.resourceType.toLowerCase();
+                    if (this.fhirResourceType === "bundle") {
+                        this.detectedPatientName = this.getPatientNameFromBundle(this.uploadedJson);
+                        //this.newPatient = (this.$store.clients.filter((client) => client.name === this.detectedPatientName).length === 0);
+                        this.numRecords = this.uploadedJson.entry.length;
+                        let typeObj = this.getRecordTypesInBundle(this.uploadedJson);
+                        this.recordTypes = typeObj.recordTypes;
+                        this.recordCounts = typeObj.recordCounts;
+                        console.log(this.recordCounts);
+                    }
+                    //import('js-fhir-validator/r4/js/' + this.fhirResourceType.toLowerCase()).then(res => console.log(res));
+                    //could dynamically import a validator function for each
+
+                    //uploaded FHIR could be tested for:
+                    //validity according to FHIR specs
+                    //ability to analyze
+                    //uniqueness of records from other records of same client
+                }
+            }
+            try {
+                fileReader.readAsText(inputFile);
+                /*console.log(fileJson);
+                console.log("resource type");
+                console.log(fileJson.resourceType);*/
+            } catch (err) {
+                console.log(err);
+            }
+            
+            //fileReader.readAsText(input);
+        },
+        setClient() {
+            this.$store.dispatch('loadClientFromUpload', this.uploadedJson);
         }
     }
 }

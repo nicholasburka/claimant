@@ -70,11 +70,59 @@ function getAllRefsWithinResource(resource) {
   //return array
 }
 
+function mapAllRefsInRecs(recs) {
+  recs.map((rec) => rec['refs'] = getAllRefsWithinResource(rec));
+  console.log(recs);
+  let refRecs = recs.filter((el) => el.refs.length > 0);
+  console.log("num of recs with refs: " + refRecs.length);
+  let recsById = {};
+  recs.map((rec) => recsById[rec.fullUrl] = rec.resource);
+  recs.map((rec) => rec.refUrls = rec.refs);
+  recs.map((rec) => rec.refs = rec.refs.filter((ref) => ref !== rec.fullUrl));
+  recs.map((rec) => rec.refs = [... new Set(rec.refs)]);
+  recs.map((rec) => rec.refs = rec.refs.map((ref) => recsById[ref]));
+  return {recs, recsById};
+}
+
+/*function getPatientResourceFromBundle(bundle) {
+  let patientRecs = bundle.entry.filter((obj) => obj.resource.resourceType.toLowerCase() === "patient");
+  if (patientRecs[0]) {
+    return patientRecs[0];
+  } else if (!patientRecs || patientRecs.length === 0) {
+    throw new Error("no patient record found");
+  } else {
+    return patientRecs; //assume that somehow this can happen
+    //and that that means patientRecs actually has type record
+    //(not real)
+  }
+}*/
+
+function sortRecsIntoTypes(recs) {
+  let claims = recs.filter((rec) => rec.resource.resourceType === "ExplanationOfBenefit");
+  let providers = recs.filter((rec) => ["Provider", "Practitioner", "CareTeam"].indexOf(rec.resource.resourceType) >= 0);
+  let organizations = recs.filter((rec) => rec.resource.resourceType === "Organization");
+  let encounters = recs.filter((rec) => rec.resource.resourceType === "Encounter");
+  let client = recs.filter((rec) => rec.resource.resourceType === "Patient")[0];
+  client.name = nameString(client.resource);
+  //**MAP ALL RELEVANT DATES FOR EACH TYPE SO CAN EASILY DISPLAY */
+  //patient
+  //condition
+  //claims (not EoB)
+  //observation
+  //procedure
+  //immunization
+  //medicationrequest
+  //careplan
+  //diagnosticreport
+  return {claims, providers, organizations, encounters, client}
+}
+  const prepositions = ["at", "of", "on", "to", "but", "with", "a", "an", "in", "pt", "ord", "-", "13", "pn", "con", "de", "for", "nos", "and"];
+  const medically_unspecific_words = ["part", "pathology", "primary", "type", "history", "general", "disease", "diseases", "human", "procedure", "addition", "additional", "code", "count"];
+
   //medicalConcepts: array of objects with
   //name, relationType, source, and uri
   function analyzeClaim(claim, medicalConcepts) {
-    const prepositions = ["at", "of", "on", "to", "but", "with", "a", "an", "in", "pt", "ord", "-", "13", "pn", "con", "de", "for", "nos", "and"];
-    const medically_unspecific_words = ["history", "general", "disease", "diseases", "human", "procedure", "addition", "additional", "code"];
+    
     console.log("analyzeClaim: analyzing claim with medicalConcepts");
     //console.log(claim);
     //console.log(medicalConcepts);
@@ -132,8 +180,63 @@ function getAllRefsWithinResource(resource) {
     })
     analysisObj.uniqueMedicalConceptWords = uniqueMedicalConceptWords;
     console.log(uniqueMedicalConceptWords);
-    //console.log("analysis obj: ");
-    //console.log(analysisObj);
+    console.log("analysis obj: ");
+    console.log(analysisObj);
+    return analysisObj;
+  }
+
+  function analyzeRecord(record, medicalConcepts) {
+    console.log("analyzeRecord: analyzing record with medicalConcepts");
+    //console.log(claim);
+    //console.log(medicalConcepts);
+    let allRecText = JSON.stringify(record.resource).toLowerCase();
+    console.log("all rec text:");
+    console.log(allRecText);
+    let analysisObj = {};
+    analysisObj.synonyms = medicalConcepts.map((concept) => {concept.name = concept.name.toLowerCase(); return concept});
+    analysisObj.matches = {};
+    let uniqueMedicalConceptWords = {};
+    medicalConcepts.forEach((concept) => {
+      let words = concept.name.split(/[\s,()/]+/).map((word) => word.toLowerCase());
+      //filter out two letter words?? *IV*
+      words = words.filter((word) => word.length > 2); 
+      //filter out medically unspecific words
+      words = words.filter((word) => medically_unspecific_words.indexOf(word) < 0);
+      console.log(words);
+      //console.log("analyzing concept");
+      //console.log(words);
+      //creates a dictionary of every word in every concept
+      words.forEach((word) => {
+        //skip prepositions
+        if (prepositions.indexOf(word) >= 0) {
+          return;
+        } else {
+          if (!uniqueMedicalConceptWords[word]) {
+            uniqueMedicalConceptWords[word] = 1;
+          } else {
+            uniqueMedicalConceptWords[word] += 1; 
+          }
+        }
+        //check if that concept word is in the claim text
+        //if so, add to array of concepts for that word
+        if (allRecText.indexOf(word) >= 0) {
+          console.log("found " + word);
+          if (analysisObj.matches[word]) {
+            console.log("old word");
+            if (analysisObj.matches[word].indexOf(concept.name)===-1) {
+              analysisObj.matches[word].push(concept);
+            }
+          } else {
+            console.log("new word");
+            analysisObj.matches[word] = [concept];
+          }
+        }
+      })
+    })
+    analysisObj.uniqueMedicalConceptWords = uniqueMedicalConceptWords;
+    console.log(uniqueMedicalConceptWords);
+    console.log("analysis obj: ");
+    console.log(analysisObj);
     return analysisObj;
   }
 
@@ -175,6 +278,7 @@ export default createStore({
     records: [],
     providers: [],
     currentRecords: [],
+    currentRecordsType: "all",
     availableClients: [],
     umlsSearches: {}, //maps search terms to search results
     searchingUMLS: false,
@@ -237,11 +341,13 @@ export default createStore({
   },
   mutations: {
     setClient(state, data) {
+      console.log("setClient mutation with data: ");
+      console.log(data);
       state.currentClient = data.currentClient;
       state.allRecords = data.allRecords;
       state.allRecordsById = data.allRecordsById;
       state.claims = data.claims;
-      state.currentRecords = data.claims;
+      state.currentRecords = data.allRecords;
       state.currentRecords = state.currentRecords.map((rec, ind) => {rec.index = ind + 1; return rec});
       state.records = data.records;
      // state.records = state.records.map((rec, ind) => rec.ind = ind);
@@ -253,12 +359,17 @@ export default createStore({
       state.providers.map((p) => {
         //console.log("new p " + p.fullUrl);
         let encounterMatch = state.encounters.filter((e) => {
-          console.log("e");
+          /*console.log("e");
           console.log(e);
           console.log(e.resource.participant[0].individual.reference);
           console.log(p.fullUrl);
-          console.log(e.resource.participant[0].individual.reference === p.fullUrl);
-          return e.resource.participant[0].individual.reference === p.fullUrl
+          console.log(e.resource.participant[0].individual.reference === p.fullUrl);*/
+          if (e.resource.participant) {
+            return e.resource.participant[0].individual.reference === p.fullUrl
+          } else {
+            return false;
+          }
+          
         });
         //console.log("e");
         console.log(encounterMatch);
@@ -289,6 +400,9 @@ export default createStore({
     },
     setClients(state, clients) {
       state.clients = clients
+    },
+    setCurrentRecords(state, recs) {
+      state.currentRecords = recs;
     },
     sortBy(state, params) {
       console.log("sortBy");
@@ -349,9 +463,16 @@ export default createStore({
       state[toReverse] = state[toReverse].reverse();
     },
     dismissSearch(state) {
-      state.currentRecords = state.claims;
+      //console.log(state.currentRecordsNoSearch);
+      //state.currentRecords = state.currentRecordsNoSearch;
+      if (state.currentRecordsType === 'all') {
+        state.currentRecords = state.allRecords;
+      } else if (state.currentRecordsType === "ExplanationOfBenefits") {
+        state.currentRecords = state.claims;
+      }
     },
-    searchCurrentRecords(state, searchStr) {
+    searchCurrentRecords(state, {searchStr, currRecType}) {
+      state.currentRecordsType = currRecType;
       let searchStrL = searchStr.toLowerCase();
       console.log("searching for " + searchStr);
       console.log(state.currentRecords);
@@ -375,6 +496,10 @@ export default createStore({
           }
         })
       }*/
+      //for each node
+      //if its value has indexof search Str
+      //store both the match and node path => display the property and its match in UI
+      state.currentRecordsNoSearch = state.currentRecords;
       state.currentRecords = state.currentRecords.filter((rec) => {
         return (JSON.stringify(rec).toLowerCase().indexOf(searchStrL) >= 0)
       });
@@ -389,8 +514,15 @@ export default createStore({
       state.currentSearchMedicalSynonyms = results.synonyms;
       console.log("synonyms");
       console.log(state.currentSearchMedicalSynonyms);
+      console.log("current recs");
+      console.log(state.currentRecords); //why does arr have len 0 for allRecords currentRecords
       state.currentRecords = state.currentRecords.filter((rec) => {
-        let res = analyzeClaim(rec, results.synonyms);
+        var res = {};
+        if (state.currentRecordsType === "ExplanationOfBenefit") {
+          res = analyzeClaim(rec, results.synonyms);
+        } else {
+          res = analyzeRecord(rec, results.synonyms);
+        }
         console.log(res);
         let filteredMatches = Object.keys(res.matches).filter((key) => {
           return res.matches[key].length >= 1;
@@ -547,38 +679,28 @@ export default createStore({
       console.log("test data");
       console.log(testData);
       let recs = await testData.entry;
-      recs.map((rec) => rec['refs'] = getAllRefsWithinResource(rec));
-      console.log(recs);
-      let refRecs = recs.filter((el) => el.refs.length > 0);
-      console.log("num of recs with refs: " + refRecs.length);
-      let recsById = {};
-      recs.map((rec) => recsById[rec.fullUrl] = rec.resource);
-      recs.map((rec) => rec.refUrls = rec.refs);
-      recs.map((rec) => rec.refs = rec.refs.filter((ref) => ref !== rec.fullUrl));
-      recs.map((rec) => rec.refs = [... new Set(rec.refs)]);
-      recs.map((rec) => rec.refs = rec.refs.map((ref) => recsById[ref]));
+      let mappedRecs = mapAllRefsInRecs(recs);
+      recs = mappedRecs.recs;
+      let recsById = mappedRecs.recsById;
       console.log("read client data");
       console.log(recs);
       console.log("recs by id: ");
       console.log(recsById);
       //console.log(res);
-      let client = recs.filter((rec) => rec.resource.resourceType === "Patient")[0];
-      console.log("client");
-      console.log(client);
+      //let client = recs.filter((rec) => rec.resource.resourceType === "Patient")[0];
+      //console.log("client");
+      //console.log(client);
+      let typedRecs = sortRecsIntoTypes(recs);
       //make an array of all resource types (non-repeating)
       //make a dict where they're all sorted into their resource type
       commit('setClient', {
         name,
         allRecords: recs,
         allRecordsById: recsById,
-        client,
-        currentClient: {name: nameString(client.resource)},
-        claims: recs.filter((rec) => rec.resource.resourceType === "ExplanationOfBenefit"),
+        currentClient: {name: nameString(typedRecs.client.resource)},
+        //claims: recs.filter((rec) => rec.resource.resourceType === "ExplanationOfBenefit"),
         //currentRecords: recs.filter((rec) => rec.resource.resourceType === "ExplanationOfBenefit"),
-        providers: recs.filter((rec) => ["Provider", "Practitioner", "CareTeam"].indexOf(rec.resource.resourceType) >= 0),
-        organizations: recs.filter((rec) => rec.resource.resourceType === "Organization"),
-        encounters: recs.filter((rec) => rec.resource.resourceType === "Encounter"),
-        records: recs.filter((rec) => ["ExplanationOfBenefit", "Provider", "Practitioner", "Organization", "CareTeam", "Encounter"].indexOf(rec.resource.resourceType) === -1)
+        ...typedRecs
       });
 
       console.log(state.claims);
@@ -586,6 +708,22 @@ export default createStore({
       console.log(state.providers);
 
       dispatch('loadTestClientFrom1up');
+    },
+    async loadClientFromUpload({commit}, clientData) {
+      let recs = await clientData.entry;
+      let mappedRecs = mapAllRefsInRecs(recs);
+      recs = mappedRecs.recs;
+      let recsById = mappedRecs.recsById;
+      let typedRecs = sortRecsIntoTypes(recs);
+      let name = typedRecs.client.name;
+      let currentClient = {name};
+      commit('setClient', {
+        name,
+        allRecords: recs,
+        allRecordsById: recsById,
+        currentClient,
+        ...typedRecs
+      })
     }
   },
   modules: {

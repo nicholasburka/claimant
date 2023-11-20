@@ -3,16 +3,21 @@
     <div id="container" class="column">
         <div id="client-name">
             <h3 style="margin-bottom: 0">Client: {{ currentClient }}</h3>
-            <span style="position: absolute;margin-top: 0; align-text: left; left: 0px;">Num Explanation of Benefits: {{ claims.length }}</span>
+            <span style="position: absolute; margin-top: 0; align-text: left; left: 0px; max-width: 80vw;">Showing {{ currentRecords.length }} records of type "{{ recordType }}" out of {{ allRecords.length }} records</span>
+
         </div>
         <div id="json-popup" class="inactive">
             <code id="json-container"></code>
             <span v-on:click="hideJson()" style="font-size: 24px">X</span>
         </div>
         <div class="row buttons" style="margin-top: 2vh;">
-            <span v-on:click="sortByProvider()">sort by provider&nbsp;&nbsp;&nbsp;</span>
-            <span v-on:click="sortByDate()">sort by date&nbsp;&nbsp;&nbsp;</span>
-            <span v-on:click="reverseClaims()">reverse list</span>
+            <div v-if="this.recordType === 'ExplanationOfBenefits'">
+                <span style="z-index: 10" v-on:click="switchRecordTypesToDisplay()">See all records</span>
+                <span v-on:click="sortByProvider()">sort by provider&nbsp;&nbsp;&nbsp;</span>
+                <span v-on:click="sortByDate()">sort by date&nbsp;&nbsp;&nbsp;</span>
+                <span v-on:click="reverseClaims()">reverse list</span>
+            </div>
+            <span v-else style="z-index: 10" v-on:click="switchRecordTypesToDisplay()">See only EoB claims</span>
             <input type="text" v-model="search" @keyup.enter="submitSearch(search)"/>
             <button v-on:click="submitSearch(search)">Search</button>
             <button v-on:click="dismissSearch()">Dismiss</button>
@@ -20,8 +25,15 @@
             <span v-if="searchingUMLS"></span>
         </div>
         <br>
-        <div id="all-recs" class="row">
-            <div id="claims" class="claims column">
+        <div id="record-container" class="row">
+            <div v-if="this.recordType === 'all'" id="all-records" class="column">
+                <div :id="record.fullUrl" class="record row" :key="record" v-on:click="this.showRecord(record)" v-for="record in currentRecords">
+                    {{ record.resource.resourceType }}
+                    
+                </div>
+            </div>
+            
+            <div v-if="this.recordType === 'ExplanationOfBenefits'" id="claims" class="claims column">
                 <div class="claim row" :key="claim" v-for="claim in currentRecords" :id="claim.fullUrl">
                     <div><span v-on:click.self="this.showEob(claim)">EoB {{ claim.index }}: </span>
                         <span v-if="claim.resource.item[0]" v-on:click.self="this.showEob(claim)">{{ claim.resource.item[0].servicedPeriod.start }}</span>
@@ -53,12 +65,12 @@
         </div>-->
 
             <div id="related-records" class="column">
-                <div v-if="currentClaim.refs">
+                <div v-if="currentRecord.refs">
                     <br>Found associated records:
-                    <ul v-on:click="showRecord(record)" class="record" :key="record" v-for="record in currentClaim.refs" :id="record">
+                    <ul v-on:click="showRecord(record)" class="record" :key="record" v-for="record in currentRecord.refs" :id="record">
                         <li>
                             <div v-if="record.resourceType === 'ExplanationOfBenefit'"><span style="color: green">EOB</span></div>
-                            <div v-else-if="record.resourceType === 'Encounter'"><span style="color: blue">Encounter</span></div>
+                            <div v-else-if="record.resourceType === 'Encounter'"><span>Encounter</span></div>
                             <div v-else><span>{{ record.resourceType }}</span></div>
                         </li>
                         
@@ -90,7 +102,7 @@ export default {
             currentClient: state => state.currentClient,
             clientDataLoaded: state => state.clientDataLoaded,
             claims: state => state.claims,
-            records: state => state.records, //miscRecords - exclusive from other categories
+            //records: state => state.records, //miscRecords - exclusive from other categories
             providers: state => state.providers,
             allRecords: state => state.allRecords,
             allRecordsById: state => state.allRecordsById,
@@ -104,9 +116,12 @@ export default {
             sortBy: "date", //or "provider"
             displayType: "claims", //or "records" or "all"
             currentClaimUrl: "",
+            currentRecordUrl: "",
             relatedRecords: [],
             currentClaim: {},
-            medicalSynonyms: []
+            currentRecord: {},
+            medicalSynonyms: [],
+            recordType: "all"
             //currentRecords: claims
         }
     },
@@ -137,6 +152,19 @@ export default {
                 lastNode ? lastNode.style.backgroundColor = "white" : undefined;
                 this.currentClaimUrl = data.fullUrl;
                 let docEl =  document.getElementById(this.currentClaimUrl)
+                if(docEl) {
+                docEl.style.color = "red"; 
+                docEl.style.backgroundColor = "gray"; 
+                }
+            } else {
+                this.currentRecord = data;
+                console.log("clicked on:");
+                console.log(this.currentRecord);
+                let lastNode = document.getElementById(this.currentRecordUrl);
+                lastNode ? lastNode.style.color = "black" : undefined;
+                lastNode ? lastNode.style.backgroundColor = "white" : undefined;
+                this.currentRecordUrl = data.fullUrl;
+                let docEl =  document.getElementById(data.fullUrl)
                 if(docEl) {
                 docEl.style.color = "red"; 
                 docEl.style.backgroundColor = "gray"; 
@@ -200,6 +228,7 @@ export default {
         showEob(eob) {
             this.jsonTree(eob);
             this.currentClaim = eob;
+            this.currentRecord = eob;
             this.relatedRecords = eob.refs;
             //**this.relatedRecords = 
         },
@@ -243,6 +272,8 @@ export default {
             this.searching = false;
         },
         async submitSearch(search) {
+            this.currentClaim = {};
+            this.currentRecord = {};
             let currSearch = this.search;
             this.dismissSearch();
             this.search = currSearch;
@@ -254,14 +285,26 @@ export default {
                 await this.$store.dispatch('getMedicalSynonyms', this.search);
                 //this.$store.commit('searchWithUMLSCurrentRecords', search);
             } else {
-                this.$store.commit('searchCurrentRecords', search);
+                this.$store.commit('searchCurrentRecords', {searchStr: search, currRecType: this.recordType});
                 this.searching = true;
                 this.currentClaim = {};
+                this.currentRecord = {};
             }
         },
+        switchRecordTypesToDisplay() {
+            if (this.recordType === 'all') {
+                this.$store.commit('setCurrentRecords', this.claims);
+                this.recordType = "ExplanationOfBenefits";
+            } else {
+                this.$store.commit('setCurrentRecords', this.allRecords);
+                this.recordType = "all";
+            }
+            this.currentClaim = {};
+            this.currentRecord = {};
+        }
     },
     created() {
-        this.$store.dispatch('loadTestClientFromDisk');
+        //this.$store.dispatch('loadTestClientFromDisk');
         //jsonview.renderJSON({}, document.querySelector('#json-container'));
     },
     updated() {
@@ -291,8 +334,12 @@ html {
     flex: 1;
     display: flex;
 }
+.record:hover {
+    background-color: aquamarine;
+}
 .claim:hover {
-    color: lightblue;
+    /*color: lightblue;*/
+    background-color: aquamarine;
 }
 .provider {
     color: green;
@@ -310,6 +357,15 @@ html {
     align-self: center;
 }
 #claims {
+    display: flex;
+    padding-top: 0vw;/*calc(30vw + 10vh);*/
+    font-size: 2vw;
+    max-height: 60vh;
+    min-height: min-content;
+    width: 70vw;
+    overflow: auto;
+}
+#all-records {
     display: flex;
     padding-top: 0vw;/*calc(30vw + 10vh);*/
     font-size: 2vw;

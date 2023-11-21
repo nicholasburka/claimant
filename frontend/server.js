@@ -10,18 +10,67 @@ const fs = require('fs'); //file system lib
 const path = require('path');
 const http = require('http');
 const https = require('https');
+const serveStatic = require('serve-static');
 
 app.use(express.json());
 app.use(express.static('dist'));
 app.use(express.static('./'));
+app.use(serveStatic(path.join(__dirname, 'dist')));
 
 app.get('/', async (req, res) => {
-    res.sendFile(path.join(__dirname, '/dist/index.html'));
+    const reject = () => {
+        res.setHeader('www-authenticate', "Basic");
+        res.sendStatus(401);
+    }
+
+    const auth = req.headers.authorization;
+
+    if (!auth) {
+        return reject();
+    }
+
+    const [username, password] = Buffer.from(
+        auth.replace("Basic ", ""),
+        "base64")
+        .toString()
+        .split(":");
+
+    if (!(username === "team" && password === "rambuxka")) {
+        return reject();
+    } else {
+        res.sendFile(path.join(__dirname, '/dist/index.html'));
+    }
 });
+app.get('/claimant', async (req, res) => {
+    const reject = () => {
+        res.setHeader('www-authenticate', "Basic");
+        res.sendStatus(401);
+    }
+
+    const auth = req.headers.authorization;
+
+    if (!auth) {
+        return reject();
+    }
+
+    const [username, password] = Buffer.from(
+        auth.replace("Basic ", ""),
+        "base64")
+        .toString()
+        .split(":");
+
+    if (!(username === "team" && password === "rambuxka")) {
+        return reject();
+    } else {
+        res.sendFile(path.join(__dirname, '/dist/index.html'));
+    }
+});
+
+
 //app.use('/1up', 1up);
 //app.use('/umls', umls);
 
-const PORT = process.env.PORT || 2000;
+const PORT = process.env.PORT || 4444;
 const serv = http.createServer(app);
 serv.listen(PORT, function() {
     console.log("listening on: " + PORT);

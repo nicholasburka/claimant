@@ -1,9 +1,9 @@
 <template>
     
     <div id="container" class="column">
-        <div id="client-name">
+        <div id="client-name" class="row column">
             <h3 style="margin-bottom: 0">Client: {{ currentClient.name }}</h3>
-            <span class="row" style="position: absolute; margin-top: 0; align-text: left; left: 0px; max-width: 80vw; font-size: 3vh">Showing {{ currentRecords.length }} records of type "{{ recordType }}" out of {{ allRecords.length }} records</span>
+            <span class="row" style="margin-top: 0; align-text: left; left: 0px; max-width: 80vw; font-size: min(3vh, 2vw)">Showing {{ currentRecords.length }} records of type "{{ recordType }}" out of {{ allRecords.length }} records</span>
         </div>
         <div id="json-popup" class="inactive">
             <code id="json-container"></code>
@@ -23,7 +23,7 @@
                 <button v-on:click="submitSearch(search)">Search</button>
                 <button v-on:click="dismissSearch()">Dismiss</button>
                 <input type="checkbox" v-model="useUMLS"/>Search with medical synonyms
-                <span v-if="searchingUMLS"></span>
+                <span v-if="searchingUMLS">...searching</span>
             </div>
         <br>
         <div id="record-container" class="row">
@@ -342,8 +342,6 @@ html {
   /*justify-content: space-around;*/
 }
 #client-name {
-    position: absolute;
-    top: 8vh;
     width: 60vw;
     text-align: left;
     margin-bottom: 2vh;

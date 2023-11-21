@@ -557,6 +557,9 @@ export default createStore({
       console.log(state.currentRecords.length);
       
     },
+    setSearchingUmlsStatus(state, stat) {
+      state.searchingUMLS = stat;
+    },
     //also filters out records that match
     setSynonyms(state, results) {
       console.log("UMLS search results given in setSynonyms: ");
@@ -599,6 +602,7 @@ export default createStore({
       const authUrl = `https://auth.1updemohealthplan.com/oauth2/authorize/test?client_id=${this.oneUpClientId}&scope=user/*.read&redirect_uri=${redirect_uri}`
     },*/
     async getMedicalSynonyms({commit}, seedTerm) {
+      commit('setSearchingUmlsStatus', true);
       console.log("getting syn with seed term: " + seedTerm);
       //should either only get the synonyms or search and change the name
       const apiKey = "a984d90d-8b63-442a-b828-9464631fde4e";
@@ -652,8 +656,10 @@ export default createStore({
         }
         //create an array of all unique words ?
         commit('setSynonyms', analysisObj);
+        commit('setSearchingUmlsStatus', false);
       } else {
         console.log("COULD NOT FIND ANY CONCEPT WITH THIS SEED TERM");
+        commit('setSearchingUmlsStatus', false);
       }
   },
     /*async fetchBlueBookTestCond({commit}) {

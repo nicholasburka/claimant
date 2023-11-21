@@ -116,8 +116,42 @@ function sortRecsIntoTypes(recs) {
   //diagnosticreport
   return {claims, providers, organizations, encounters, client}
 }
-  const prepositions = ["at", "of", "on", "to", "but", "with", "a", "an", "in", "pt", "ord", "-", "13", "pn", "con", "de", "for", "nos", "and"];
-  const medically_unspecific_words = ["part", "pathology", "primary", "type", "history", "general", "disease", "diseases", "human", "procedure", "addition", "additional", "code", "count"];
+  const prepositions = ["at", "the", "of", "on", "to", "but", "with", "a", "an", "in", "pt", "ord", "-", "13", "pn", "con", "de", "for", "nos", "and"];
+  const medically_unspecific_words = ["terminology", "part", "includes", "less", "first", "pathology", "primary", "type", "history", "general", "disease", "diseases", "human", "procedure", "addition", "additional", "code", "count"];
+
+  function medicalConceptsToWords(medicalConcepts) {
+    let uniqueMedicalConceptWordsCount = {};
+    medicalConcepts.forEach((concept) => {
+      let words = concept.name.split(/[\s,()/]+/).map((word) => word.toLowerCase());
+      //filter out two letter words?? *IV*
+      words = words.filter((word) => word.length > 2); 
+      //filter out medically unspecific words
+      words = words.filter((word) => medically_unspecific_words.indexOf(word) < 0);
+      words = words.filter((word) => word.indexOf(":") < 0); //filter out phrases like "report:find:pt:bone:nar"
+      console.log(words);
+      //console.log("analyzing concept");
+      //console.log(words);
+      //creates a dictionary of every word in every concept
+      words.forEach((word) => {
+        //skip prepositions
+        if (prepositions.indexOf(word) >= 0) {
+          return;
+        } else {
+          if (!uniqueMedicalConceptWordsCount[word]) {
+            uniqueMedicalConceptWordsCount[word] = 1;
+          } else {
+            //how many times does a word appear across
+            //all related medical concepts from UMLS search
+            //(rough estimate of word => concept area centrality)
+            uniqueMedicalConceptWordsCount[word] += 1; 
+          }
+        }
+        }
+      )
+    })
+    let uniqueMedicalConceptsWords = Object.keys(uniqueMedicalConceptWordsCount);
+    return {uniqueMedicalConceptWordsCount, uniqueMedicalConceptsWords};
+  }
 
   //medicalConcepts: array of objects with
   //name, relationType, source, and uri
@@ -147,6 +181,7 @@ function sortRecsIntoTypes(recs) {
       words = words.filter((word) => word.length > 2); 
       //filter out medically unspecific words
       words = words.filter((word) => medically_unspecific_words.indexOf(word) < 0);
+      words = words.filter((word) => word.indexOf(":") < 0); //filter out phrases like "report:find:pt:bone:nar"
       console.log(words);
       //console.log("analyzing concept");
       //console.log(words);
@@ -178,7 +213,8 @@ function sortRecsIntoTypes(recs) {
         }
       })
     })
-    analysisObj.uniqueMedicalConceptWords = uniqueMedicalConceptWords;
+    analysisObj.uniqueMedicalConceptWordsCount = uniqueMedicalConceptWords;
+    analysisObj.uniqueMedicalConceptsWords = Object.keys(uniqueMedicalConceptWords);
     console.log(uniqueMedicalConceptWords);
     console.log("analysis obj: ");
     console.log(analysisObj);
@@ -202,6 +238,7 @@ function sortRecsIntoTypes(recs) {
       words = words.filter((word) => word.length > 2); 
       //filter out medically unspecific words
       words = words.filter((word) => medically_unspecific_words.indexOf(word) < 0);
+      words = words.filter((word) => word.indexOf(":") < 0); //filter out phrases like "report:find:pt:bone:nar"
       console.log(words);
       //console.log("analyzing concept");
       //console.log(words);
@@ -214,6 +251,9 @@ function sortRecsIntoTypes(recs) {
           if (!uniqueMedicalConceptWords[word]) {
             uniqueMedicalConceptWords[word] = 1;
           } else {
+            //how many times does a word appear across
+            //all related medical concepts from UMLS search
+            //(rough estimate of word => concept area centrality)
             uniqueMedicalConceptWords[word] += 1; 
           }
         }
@@ -233,7 +273,10 @@ function sortRecsIntoTypes(recs) {
         }
       })
     })
-    analysisObj.uniqueMedicalConceptWords = uniqueMedicalConceptWords;
+    //** could create aggregate search stats across all records combining results from individual record analysis
+    analysisObj.uniqueMedicalConceptWordsCount = uniqueMedicalConceptWords;
+    //the unique words will be the same for all records - move this to calling function of this function
+    analysisObj.uniqueMedicalConceptsWords = Object.keys(uniqueMedicalConceptWords);
     console.log(uniqueMedicalConceptWords);
     console.log("analysis obj: ");
     console.log(analysisObj);
@@ -282,7 +325,8 @@ export default createStore({
     availableClients: [],
     umlsSearches: {}, //maps search terms to search results
     searchingUMLS: false,
-    currentSearchMedicalSynonyms: []
+    currentSearchMedicalSynonyms: [],
+    synonymsUniqueWords: []
    //currentConditionHeader: "Musculoskeletal Disorders",
     //condHeaderConcepts: [],
      //match words, add matched words to record, color record if matchedWords
@@ -347,7 +391,11 @@ export default createStore({
       state.allRecords = data.allRecords;
       state.allRecordsById = data.allRecordsById;
       state.claims = data.claims;
-      state.currentRecords = data.allRecords;
+      if (state.currentRecordsType === 'ExplanationOfBenefit') {
+        state.currentRecords = state.claims;
+      } else {
+        state.currentRecords = state.allRecords;
+      }
       state.currentRecords = state.currentRecords.map((rec, ind) => {rec.index = ind + 1; return rec});
       state.records = data.records;
      // state.records = state.records.map((rec, ind) => rec.ind = ind);
@@ -401,7 +449,8 @@ export default createStore({
     setClients(state, clients) {
       state.clients = clients
     },
-    setCurrentRecords(state, recs) {
+    setCurrentRecords(state, {recs, recsType}) {
+      state.currentRecordsType = recsType;
       state.currentRecords = recs;
     },
     sortBy(state, params) {
@@ -470,6 +519,7 @@ export default createStore({
       } else if (state.currentRecordsType === "ExplanationOfBenefits") {
         state.currentRecords = state.claims;
       }
+      state.synonymsUniqueWords = [];
     },
     searchCurrentRecords(state, {searchStr, currRecType}) {
       state.currentRecordsType = currRecType;
@@ -512,10 +562,13 @@ export default createStore({
       console.log("UMLS search results given in setSynonyms: ");
       console.log(results);
       state.currentSearchMedicalSynonyms = results.synonyms;
+      state.synonymsUniqueWords = medicalConceptsToWords(results.synonyms).uniqueMedicalConceptsWords;
       console.log("synonyms");
       console.log(state.currentSearchMedicalSynonyms);
       console.log("current recs");
       console.log(state.currentRecords); //why does arr have len 0 for allRecords currentRecords
+      
+      //set the search results
       state.currentRecords = state.currentRecords.filter((rec) => {
         var res = {};
         if (state.currentRecordsType === "ExplanationOfBenefit") {
@@ -524,6 +577,8 @@ export default createStore({
           res = analyzeRecord(rec, results.synonyms);
         }
         console.log(res);
+
+        //**can set the number of matches threshold for a search result
         let filteredMatches = Object.keys(res.matches).filter((key) => {
           return res.matches[key].length >= 1;
         }); //attempt at language preposition filter (e.g. 'y' or 'con')
@@ -533,6 +588,7 @@ export default createStore({
         }
         return (filteredMatches.length > 0);
       });
+
     }
     /*findRelevancyForCurrentCondition(state) {
       
@@ -594,6 +650,7 @@ export default createStore({
           //needs data cleaning
           analysisObj.synonyms = analysisObj.synonyms.concat(baseConceptResults.result.results);
         }
+        //create an array of all unique words ?
         commit('setSynonyms', analysisObj);
       } else {
         console.log("COULD NOT FIND ANY CONCEPT WITH THIS SEED TERM");
@@ -717,13 +774,20 @@ export default createStore({
       let typedRecs = sortRecsIntoTypes(recs);
       let name = typedRecs.client.name;
       let currentClient = {name};
-      commit('setClient', {
-        name,
-        allRecords: recs,
-        allRecordsById: recsById,
-        currentClient,
-        ...typedRecs
-      })
+      try {
+        commit('setClient', {
+          name,
+          allRecords: recs,
+          allRecordsById: recsById,
+          currentClient,
+          ...typedRecs
+        })
+        return true;
+      } catch (err) {
+        console.log("could not setClient with loaded JSON");
+        console.log(err);
+        return false;
+      }
     }
   },
   modules: {

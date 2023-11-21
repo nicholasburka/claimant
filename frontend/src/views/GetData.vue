@@ -7,6 +7,7 @@
             <p>the file will be stored in your browser's local storage - only search terms will be transmitted online.</p> <!--we will only store anonymized metadata about search and analyses that you choose to share to help us build our product.</p>-->
             <input id="fileInput" type="file" class="row">
             <button v-on:click="readFile()" id="uploadSubmit" type="button" class="row">Submit JSON</button>
+            <h3 v-if="successfulLoad" style="color: rgb(3, 222, 3)">Loaded JSON successfully - navigate to Review Data at top of page.</h3>
             <h3 v-if="uploadedJson && fhirResourceType">Detected FHIR Resource of Type: {{ fhirResourceType }} </h3>
             <h3 v-if="detectedPatientName">Patient: {{ detectedPatientName }}</h3>
             <h3 v-if="numRecords">Record count: {{ numRecords }}</h3>
@@ -42,7 +43,8 @@ export default {
     data: function() {
         return {
             uploadedJson: {},
-            fhirResourceType: ""
+            fhirResourceType: "",
+            successfulLoad: false
         }
     },
     methods: {
@@ -170,8 +172,9 @@ export default {
             
             //fileReader.readAsText(input);
         },
-        setClient() {
-            this.$store.dispatch('loadClientFromUpload', this.uploadedJson);
+        async setClient() {
+            let loadedSuccessfully = await this.$store.dispatch('loadClientFromUpload', this.uploadedJson);
+            this.successfulLoad = loadedSuccessfully;
         }
     }
 }

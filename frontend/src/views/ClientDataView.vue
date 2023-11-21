@@ -2,9 +2,8 @@
     
     <div id="container" class="column">
         <div id="client-name">
-            <h3 style="margin-bottom: 0">Client: {{ currentClient }}</h3>
-            <span style="position: absolute; margin-top: 0; align-text: left; left: 0px; max-width: 80vw;">Showing {{ currentRecords.length }} records of type "{{ recordType }}" out of {{ allRecords.length }} records</span>
-
+            <h3 style="margin-bottom: 0">Client: {{ currentClient.name }}</h3>
+            <span class="row" style="position: absolute; margin-top: 0; align-text: left; left: 0px; max-width: 80vw; font-size: 3vh">Showing {{ currentRecords.length }} records of type "{{ recordType }}" out of {{ allRecords.length }} records</span>
         </div>
         <div id="json-popup" class="inactive">
             <code id="json-container"></code>
@@ -18,12 +17,14 @@
                 <span v-on:click="reverseClaims()">reverse list</span>
             </div>
             <span v-else style="z-index: 10" v-on:click="switchRecordTypesToDisplay()">See only EoB claims</span>
-            <input type="text" v-model="search" @keyup.enter="submitSearch(search)"/>
-            <button v-on:click="submitSearch(search)">Search</button>
-            <button v-on:click="dismissSearch()">Dismiss</button>
-            <input type="checkbox" v-model="useUMLS"/>Search with medical synonyms
-            <span v-if="searchingUMLS"></span>
         </div>
+        <div class="row">
+                <input style="width: 40vw;" type="text" v-model="search" @keyup.enter="submitSearch(search)"/>
+                <button v-on:click="submitSearch(search)">Search</button>
+                <button v-on:click="dismissSearch()">Dismiss</button>
+                <input type="checkbox" v-model="useUMLS"/>Search with medical synonyms
+                <span v-if="searchingUMLS"></span>
+            </div>
         <br>
         <div id="record-container" class="row">
             <div v-if="this.recordType === 'all'" id="all-records" class="column">
@@ -36,21 +37,23 @@
             <div v-if="this.recordType === 'ExplanationOfBenefits'" id="claims" class="claims column">
                 <div class="claim row" :key="claim" v-for="claim in currentRecords" :id="claim.fullUrl">
                     <div><span v-on:click.self="this.showEob(claim)">EoB {{ claim.index }}: </span>
-                        <span v-if="claim.resource.item[0]" v-on:click.self="this.showEob(claim)">{{ claim.resource.item[0].servicedPeriod.start }}</span>
-                        <span v-else v-on:click.self="this.showEob(claim)">{{ " " + claim.resource.item.servicedPeriod.start  +", "}}</span>
-                        <span class="provider" v-on:click="showProvider(claim.resource.provider.reference)">{{ " " + this.getProvider(claim.resource.provider.reference) + ", "}}</span>
-                        <div :id="claim.fullUrl + service" class="service" v-on:click.self="this.showEob(claim)">
-                            <div v-if="claim.resource.item[0]">
-                                <span style="color:purple" v-on:click.self="this.showEob(claim)">Products/Services claimed: </span>
-                                <span v-for="item in claim.resource.item" :key="item" v-on:click.self="this.showEob(claim)">
-                                    {{ item.productOrService.text + ", "}}
-                                </span>
+                        <div v-if="claim.resource.item">
+                            <span v-if="claim.resource.item[0]" v-on:click.self="this.showEob(claim)">{{ claim.resource.item[0].servicedPeriod.start }}</span>
+                            <span v-else v-on:click.self="this.showEob(claim)">{{ " " + claim.resource.item.servicedPeriod.start  +", "}}</span>
+                            <span class="provider" v-on:click="showProvider(claim.resource.provider.reference)">{{ " " + this.getProvider(claim.resource.provider.reference) + ", "}}</span>
+                            <div :id="claim.fullUrl + service" class="service" v-on:click.self="this.showEob(claim)">
+                                <div v-if="claim.resource.item[0]">
+                                    <span style="color:purple" v-on:click.self="this.showEob(claim)">Products/Services claimed: </span>
+                                    <span v-for="item in claim.resource.item" :key="item" v-on:click.self="this.showEob(claim)">
+                                        {{ item.productOrService.text + ", "}}
+                                    </span>
+                                </div>
+                                <span v-else v-on:click.self="this.showEob(claim)">{{ claim.resource.item.productOrService.text }}</span>
                             </div>
-                            <span v-else v-on:click.self="this.showEob(claim)">{{ claim.resource.item.productOrService.text }}</span>
+                            <!--<span style="font-size:5px" :key="item" v-for="item in claim.resource.item">{{ item.servicedPeriod.start + "   "}}</span>-->
+                            <!--<code :id="claim.fullUrl + 'json'" class="inactive">{{JSON.stringify(claim)}}</code>
+                            -->
                         </div>
-                        <!--<span style="font-size:5px" :key="item" v-for="item in claim.resource.item">{{ item.servicedPeriod.start + "   "}}</span>-->
-                        <!--<code :id="claim.fullUrl + 'json'" class="inactive">{{JSON.stringify(claim)}}</code>
-                        -->
                     </div>
                 </div>
             </div>
@@ -81,6 +84,15 @@
                     </ul>
                 </div>
             </div>
+            <div id="synonyms" class="column">
+                <div v-if="synonymsUniqueWords.length > 0">
+                    <ul>
+                        Unique words of medical synonyms for {{search}} from <a href="https://www.nlm.nih.gov/research/umls/index.html">UMLS</a>
+                        <li v-for="word in synonymsUniqueWords" :key="word">{{ word }}</li>
+                    </ul>
+                    <!--<span>Synonym words: {{ String(synonymsUniqueWords) }}</span>-->
+                </div>
+            </div>
         </div>
         
     </div>
@@ -108,7 +120,8 @@ export default {
             allRecordsById: state => state.allRecordsById,
             currentRecords: state => state.currentRecords,
             searchingUMLS: state => state.searchingUMLS,
-            medicalSynonyms: state => state.currentSearchMedicalSynonyms
+            medicalSynonyms: state => state.currentSearchMedicalSynonyms,
+            synonymsUniqueWords: state => state.synonymsUniqueWords
         })
     },
     data: function() {
@@ -293,10 +306,10 @@ export default {
         },
         switchRecordTypesToDisplay() {
             if (this.recordType === 'all') {
-                this.$store.commit('setCurrentRecords', this.claims);
+                this.$store.commit('setCurrentRecords', {recs: this.claims, recsType: "ExplanationOfBenefits"});
                 this.recordType = "ExplanationOfBenefits";
             } else {
-                this.$store.commit('setCurrentRecords', this.allRecords);
+                this.$store.commit('setCurrentRecords', {recs: this.allRecords, recsType: "all"});
                 this.recordType = "all";
             }
             this.currentClaim = {};
@@ -325,7 +338,15 @@ html {
 .row {
   display: flex;
   flex-direction: row;
+  margin-top: 1vh;
   /*justify-content: space-around;*/
+}
+#client-name {
+    position: absolute;
+    top: 8vh;
+    width: 60vw;
+    text-align: left;
+    margin-bottom: 2vh;
 }
 .claim {
     text-align: left;
@@ -392,10 +413,6 @@ code {
 }
 .active {
     display: flex;
-}
-#client-name {
-    position: absolute;
-    top: 5vh;
 }
 #json-popup {
     position: absolute;

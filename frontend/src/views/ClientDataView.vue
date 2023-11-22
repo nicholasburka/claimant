@@ -93,7 +93,7 @@
             <div id="synonyms" class="column">
                 <div v-if="synonymsUniqueWords.length > 0">
                     <ul>
-                        Unique words of medical synonyms for "{{search}}" from <a href="https://www.nlm.nih.gov/research/umls/index.html">UMLS</a>
+                        {{ synonymsUniqueWords.length }} unique words in medical synonyms for "{{search}}" from <a href="https://www.nlm.nih.gov/research/umls/index.html">UMLS</a>
                         <li v-for="word in synonymsUniqueWords" :key="word">{{ word }}</li>
                     </ul>
                     <!--<span>Synonym words: {{ String(synonymsUniqueWords) }}</span>-->

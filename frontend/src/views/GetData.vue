@@ -1,18 +1,28 @@
 <template>
     <div>
-        <h3>Get Data - {{ client.name }}</h3>
+        <h3>Load Data - {{ client.name }}</h3>
         <!--upload box-->
+        <!--new client or attach to client - radio choice-->
+        <!--form for new client, dropdown for clients to attach to-->
         <div id="upload div" class="column">
-            <p>(in development - basic functionality works) upload a FHIR R4 JSON file for the current client (additional filetypes coming soon)</p>
+            <p>upload a FHIR R4 JSON file or PDF for the current client</p>
             <p>the file will be stored in your browser's local storage - only search terms will be transmitted online.</p> <!--we will only store anonymized metadata about search and analyses that you choose to share to help us build our product.</p>-->
             <input id="fileInput" type="file" class="row">
-            <button v-on:click="readFile()" id="uploadSubmit" type="button" class="row">Submit JSON</button>
-            <h3 v-if="successfulLoad" style="color: rgb(3, 222, 3)">Loaded JSON successfully - navigate to Review Data at top of page.</h3>
-            <h3 v-if="uploadedJson && fhirResourceType">Detected FHIR Resource of Type: {{ fhirResourceType }} </h3>
-            <h3 v-if="detectedPatientName">Patient: {{ detectedPatientName }}</h3>
-            <h3 v-if="numRecords">Record count: {{ numRecords }}</h3>
-            <h3 v-if="recordTypes">Record types: {{ recordCounts }}</h3>
-            <button v-if="uploadedJson && fhirResourceType" v-on:click="setClient()">Confirm & Upload as New Client</button>
+            <button v-on:click="readFile()" id="uploadSubmit" type="button" class="row">Validate File</button>
+            <h3 v-if="invalidFileType" style="color: red">Invalid file type: not JSON or PDF.</h3>
+            <h3 v-if="successfulLoad" style="color: rgb(3, 222, 3)">Loaded file successfully - navigate to Review Data at top of page.</h3>
+            <div id="jsonFileDetails">
+                <h3 v-if="uploadedJson && fhirResourceType">Detected FHIR Resource of Type: {{ fhirResourceType }} </h3>
+                <h3 v-if="detectedPatientName">Patient: {{ detectedPatientName }}</h3>
+                <h3 v-if="numRecords">Record count: {{ numRecords }}</h3>
+                <h3 v-if="recordTypes">Record types: {{ recordCounts }}</h3>
+                <button v-if="uploadedJson && fhirResourceType" v-on:click="setClient()">Confirm & Upload as New Client</button>
+            </div>
+            <div id="pdfFileDetails">
+                <h3 v-if="numPages > 0">Page count: {{ numPages }}</h3>
+                <button v-on:click="setPdf()" v-if="validatedPdf">Confirm Load PDF for Analysis</button>
+            </div>
+
         </div>
         <!--1up explanation-->
         <!--<div id="1up">
@@ -28,6 +38,12 @@
 import {mapState} from 'vuex'
 import {levenshtein} from 'string-comparison'
 //import { thresholdSturges } from 'd3';
+//import * as pdf from 'pdfjs-dist'
+import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
+import '../../node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs'
+//const pdf = require("pdfjs/es5/build/pdf")
+
+//pdf.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 function similarNames(name1, name2) {
     return levenshtein.similarity(name1, name2) > .55;
@@ -44,7 +60,11 @@ export default {
         return {
             uploadedJson: {},
             fhirResourceType: "",
-            successfulLoad: false
+            successfulLoad: false,
+            invalidFileType: false,
+            numPages: 0,
+            validatedPdf: false,
+            pdf: {}
         }
     },
     methods: {
@@ -130,50 +150,93 @@ export default {
             });
             return {recordTypes, recordCounts};
         },
-        async readFile() {
-            let inputFile = document.querySelector("input").files[0];
-            const fileReader = new FileReader();
-            //https://developer.mozilla.org/en-US/docs/Web/API/FileReader/FileReader
-            fileReader.onload = (evt) => {
-                console.log("file reader on load");
-                let text = evt.target.result;
-                let json = JSON.parse(text);
-                console.log(json.resourceType);
-                console.log(json);
-                if (json.resourceType) {
-                    this.uploadedJson = json;
-                    this.fhirResourceType = json.resourceType.toLowerCase();
-                    if (this.fhirResourceType === "bundle") {
-                        this.detectedPatientName = this.getPatientNameFromBundle(this.uploadedJson);
-                        //this.newPatient = (this.$store.clients.filter((client) => client.name === this.detectedPatientName).length === 0);
-                        this.numRecords = this.uploadedJson.entry.length;
-                        let typeObj = this.getRecordTypesInBundle(this.uploadedJson);
-                        this.recordTypes = typeObj.recordTypes;
-                        this.recordCounts = typeObj.recordCounts;
-                        console.log(this.recordCounts);
-                    }
-                    //import('js-fhir-validator/r4/js/' + this.fhirResourceType.toLowerCase()).then(res => console.log(res));
-                    //could dynamically import a validator function for each
+        async validatePdf() {
 
-                    //uploaded FHIR could be tested for:
-                    //validity according to FHIR specs
-                    //ability to analyze
-                    //uniqueness of records from other records of same client
+        },
+        async readFile() {
+            this.invalidFileType = false;
+            let inputFile = document.querySelector("input").files[0];
+            if (inputFile.type !== "application/pdf" && (inputFile.type !== "application/json")) {
+                console.log("invalid file type - not PDF or JSON");
+                console.log(inputFile.type);
+                console.log(typeof(inputFile.type));
+                this.invalidFileType = true;
+                return;
+            }
+
+            if (inputFile.type === "application/json") {
+                const fileReader = new FileReader();
+                //https://developer.mozilla.org/en-US/docs/Web/API/FileReader/FileReader
+                fileReader.onload = (evt) => {
+                    console.log("file reader on load");
+                    let text = evt.target.result;
+                    if (inputFile.type === "application/json") {
+                        let json = JSON.parse(text);
+                        console.log(json.resourceType);
+                        console.log(json);
+                        if (json.resourceType) {
+                            this.uploadedJson = json;
+                            this.fhirResourceType = json.resourceType.toLowerCase();
+                            if (this.fhirResourceType === "bundle") {
+                                this.detectedPatientName = this.getPatientNameFromBundle(this.uploadedJson);
+                                //this.newPatient = (this.$store.clients.filter((client) => client.name === this.detectedPatientName).length === 0);
+                                this.numRecords = this.uploadedJson.entry.length;
+                                let typeObj = this.getRecordTypesInBundle(this.uploadedJson);
+                                this.recordTypes = typeObj.recordTypes;
+                                this.recordCounts = typeObj.recordCounts;
+                                console.log(this.recordCounts);
+                            }
+                            //import('js-fhir-validator/r4/js/' + this.fhirResourceType.toLowerCase()).then(res => console.log(res));
+                            //could dynamically import a validator function for each
+
+                            //uploaded FHIR could be tested for:
+                            //validity according to FHIR specs
+                            //ability to analyze
+                            //uniqueness of records from other records of same client
+                        }
+                    } 
+                }
+                try {
+                    fileReader.readAsText(inputFile);
+                    /*console.log(fileJson);
+                    console.log("resource type");
+                    console.log(fileJson.resourceType);*/
+                } catch (err) {
+                    console.log(err);
                 }
             }
-            try {
-                fileReader.readAsText(inputFile);
-                /*console.log(fileJson);
-                console.log("resource type");
-                console.log(fileJson.resourceType);*/
-            } catch (err) {
-                console.log(err);
+            else if (inputFile.type === "application/pdf") {
+                const fileReader = new FileReader();
+                const data= this;
+                fileReader.onload = function(evt) {
+
+                    const typedArr = new Uint8Array(evt.target.result);
+                    let docPromise = getDocument(typedArr);
+                    console.log(docPromise);
+                    
+                    docPromise.promise.then(doc => {
+                        data.numPages = doc.numPages;
+                        console.log(this);
+                        console.log(data);
+                        console.log("num pages: " + doc.numPages);
+                        data.pdf = doc;
+                        data.validatedPdf = true;
+                    })
+
+                }
+
+                fileReader.readAsArrayBuffer(inputFile);
+                
             }
             
             //fileReader.readAsText(input);
         },
         async setClient() {
             let loadedSuccessfully = await this.$store.dispatch('loadClientFromUpload', this.uploadedJson);
+            this.successfulLoad = loadedSuccessfully;
+        },
+        async setPdf() {
+            let loadedSuccessfully = await this.$store.dispatch('loadPdfFromUpload', this.pdf);
             this.successfulLoad = loadedSuccessfully;
         }
     }

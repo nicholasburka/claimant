@@ -1,6 +1,8 @@
 import { createStore } from 'vuex'
 //import fs from 'fs'
 import testData from "../../data/AaronBrekke/Aaron697_Brekke496_2fa15bc7-8866-461a-9000-f739e425860a";
+import {toRaw} from 'vue'
+
 
 //const blueBookMusculoskeletalUrl = "./musculoskeletal.txt"
 //****TODO retrieve local storage
@@ -117,7 +119,7 @@ function sortRecsIntoTypes(recs) {
   return {claims, providers, organizations, encounters, client}
 }
   const prepositions = ["at", "the", "of", "on", "to", "but", "with", "a", "an", "in", "pt", "ord", "-", "13", "pn", "con", "de", "for", "nos", "and"];
-  const medically_unspecific_words = ["terminology", "part", "includes", "less", "first", "pathology", "primary", "type", "history", "general", "disease", "diseases", "human", "procedure", "addition", "additional", "code", "count"];
+  const medically_unspecific_words = ["terminology", "status", "part", "includes", "less", "first", "pathology", "primary", "type", "history", "general", "disease", "diseases", "human", "procedure", "addition", "additional", "code", "count"];
 
   function medicalConceptsToWords(medicalConcepts) {
     let uniqueMedicalConceptWordsCount = {};
@@ -153,81 +155,7 @@ function sortRecsIntoTypes(recs) {
     return {uniqueMedicalConceptWordsCount, uniqueMedicalConceptsWords};
   }
 
-  //medicalConcepts: array of objects with
-  //name, relationType, source, and uri
-  function analyzeClaim(claim, medicalConcepts) {
-    
-    console.log("analyzeClaim: analyzing claim with medicalConcepts");
-    //console.log(claim);
-    //console.log(medicalConcepts);
-    let allClaimText = "";// = claim.//.this + record.that + record. => ""
-    if (claim.resource.item[0]) {
-      claim.resource.item.forEach((item) => {
-        allClaimText += item.productOrService.text + " ";
-      })
-    } else {
-      allClaimText += claim.resource.item.productOrService.text;
-    }
-    allClaimText = allClaimText.toLowerCase();
-    console.log("all claim text:");
-    console.log(allClaimText);
-    let analysisObj = {};
-    analysisObj.synonyms = medicalConcepts.map((concept) => {concept.name = concept.name.toLowerCase(); return concept});
-    analysisObj.matches = {};
-    let uniqueMedicalConceptWords = {};
-    medicalConcepts.forEach((concept) => {
-      let words = concept.name.split(/[\s,()/]+/).map((word) => word.toLowerCase());
-      //filter out two letter words?? *IV*
-      words = words.filter((word) => word.length > 2); 
-      //filter out medically unspecific words
-      words = words.filter((word) => medically_unspecific_words.indexOf(word) < 0);
-      words = words.filter((word) => word.indexOf(":") < 0); //filter out phrases like "report:find:pt:bone:nar"
-      console.log(words);
-      //console.log("analyzing concept");
-      //console.log(words);
-      //creates a dictionary of every word in every concept
-      words.forEach((word) => {
-        //skip prepositions
-        if (prepositions.indexOf(word) >= 0) {
-          return;
-        } else {
-          if (!uniqueMedicalConceptWords[word]) {
-            uniqueMedicalConceptWords[word] = 1;
-          } else {
-            uniqueMedicalConceptWords[word] += 1; 
-          }
-        }
-        //check if that concept word is in the claim text
-        //if so, add to array of concepts for that word
-        if (allClaimText.indexOf(word) >= 0) {
-          console.log("found " + word);
-          if (analysisObj.matches[word]) {
-            console.log("old word");
-            if (analysisObj.matches[word].indexOf(concept.name)===-1) {
-              analysisObj.matches[word].push(concept);
-            }
-          } else {
-            console.log("new word");
-            analysisObj.matches[word] = [concept];
-          }
-        }
-      })
-    })
-    analysisObj.uniqueMedicalConceptWordsCount = uniqueMedicalConceptWords;
-    analysisObj.uniqueMedicalConceptsWords = Object.keys(uniqueMedicalConceptWords);
-    console.log(uniqueMedicalConceptWords);
-    console.log("analysis obj: ");
-    console.log(analysisObj);
-    return analysisObj;
-  }
-
-  function analyzeRecord(record, medicalConcepts) {
-    console.log("analyzeRecord: analyzing record with medicalConcepts");
-    //console.log(claim);
-    //console.log(medicalConcepts);
-    let allRecText = JSON.stringify(record.resource).toLowerCase();
-    console.log("all rec text:");
-    console.log(allRecText);
+  function analyzeText(recordText, medicalConcepts) {
     let analysisObj = {};
     analysisObj.synonyms = medicalConcepts.map((concept) => {concept.name = concept.name.toLowerCase(); return concept});
     analysisObj.matches = {};
@@ -259,7 +187,7 @@ function sortRecsIntoTypes(recs) {
         }
         //check if that concept word is in the claim text
         //if so, add to array of concepts for that word
-        if (allRecText.indexOf(word) >= 0) {
+        if (recordText.indexOf(word) >= 0) {
           console.log("found " + word);
           if (analysisObj.matches[word]) {
             console.log("old word");
@@ -282,6 +210,38 @@ function sortRecsIntoTypes(recs) {
     console.log(analysisObj);
     return analysisObj;
   }
+
+  //medicalConcepts: array of objects with
+  //name, relationType, source, and uri
+  function analyzeClaim(claim, medicalConcepts) {
+    console.log("analyzeClaim: analyzing claim with medicalConcepts");
+    //console.log(claim);
+    //console.log(medicalConcepts);
+    let allClaimText = "";// = claim.//.this + record.that + record. => ""
+    if (claim.resource.item[0]) {
+      claim.resource.item.forEach((item) => {
+        allClaimText += item.productOrService.text + " ";
+      })
+    } else {
+      allClaimText += claim.resource.item.productOrService.text;
+    }
+    allClaimText = allClaimText.toLowerCase();
+    console.log("all claim text:");
+    console.log(allClaimText);
+    return analyzeText(allClaimText, medicalConcepts);
+  }
+
+  function analyzeRecord(record, medicalConcepts) {
+    console.log("analyzeRecord: analyzing record with medicalConcepts");
+    //console.log(claim);
+    //console.log(medicalConcepts);
+    let allRecText = JSON.stringify(record.resource).toLowerCase();
+    console.log("all rec text:");
+    console.log(allRecText);
+    return analyzeText(allRecText, medicalConcepts);
+  }
+
+  
 
   async function searchUMLS(seedTerm, partialMatch=false) {
     const base_uri = "https://uts-ws.nlm.nih.gov/rest";
@@ -323,10 +283,12 @@ export default createStore({
     currentRecords: [],
     currentRecordsType: "all",
     availableClients: [],
-    umlsSearches: {}, //maps search terms to search results
+    umlsSearches: {}, //**maps search terms to search results
     searchingUMLS: false,
     currentSearchMedicalSynonyms: [],
-    synonymsUniqueWords: []
+    synonymsUniqueWords: [],
+    pdf: {},
+    pages: []
    //currentConditionHeader: "Musculoskeletal Disorders",
     //condHeaderConcepts: [],
      //match words, add matched words to record, color record if matchedWords
@@ -453,6 +415,14 @@ export default createStore({
       state.currentRecordsType = recsType;
       state.currentRecords = recs;
     },
+    setPdf(state, {pdf, pages}) {
+      state.pdf = pdf;
+      state.pages = pages;
+      state.currentRecords = state.pages;
+      console.log("setPdf pages: ");
+      console.log(state.pages);
+      state.currentRecordsType = "pdf";
+    },
     sortBy(state, params) {
       console.log("sortBy");
       console.log(params);
@@ -518,6 +488,8 @@ export default createStore({
         state.currentRecords = state.allRecords;
       } else if (state.currentRecordsType === "ExplanationOfBenefits") {
         state.currentRecords = state.claims;
+      } else if (state.currentRecordsType === "pdf") {
+        state.currentRecords = state.pages;
       }
       state.synonymsUniqueWords = [];
     },
@@ -576,8 +548,10 @@ export default createStore({
         var res = {};
         if (state.currentRecordsType === "ExplanationOfBenefit") {
           res = analyzeClaim(rec, results.synonyms);
-        } else {
+        } else if (state.currentRecordsType === "all") {
           res = analyzeRecord(rec, results.synonyms);
+        } else if (state.currentRecordsType === "pdf") {
+          res = analyzeText(rec, results.synonyms);
         }
         console.log(res);
 
@@ -794,6 +768,55 @@ export default createStore({
         console.log(err);
         return false;
       }
+    },
+    async loadPdfFromUpload({commit}, pdf) {
+      //parse pages
+      let pages = [];
+      for (let i = 1; i <= pdf.numPages; i++) {
+        //https://github.com/mozilla/pdf.js/blob/master/examples/node/getinfo.mjs
+        //https://stackoverflow.com/questions/72738037/can-you-store-and-use-pdfdocumentproxy-pdfpageproxy-objects-from-pdf-js-as-mem
+        let pg = await toRaw(pdf).getPage(i);
+        //const viewport = pg.getViewport({scale: 1.0});
+        let txt = await pg.getTextContent();
+        let str = txt.items.map((item) => item.str)
+                  .join(" ")
+                  .replace(/ {2}/, " ");
+        pages.push(str);
+        pg.cleanup();
+        /*toRaw(pdf).getPage(i).then(function (page) {
+          console.log("# Page " + i);
+          const viewport = page.getViewport({ scale: 1.0 });
+          console.log("Size: " + viewport.width + "x" + viewport.height);
+          console.log();
+          page
+            .getTextContent()
+            .then(function (content) {
+              // Content contains lots of information about the text layout and
+              // styles, but we need only strings at the moment
+              const strings = content.items.map(function (item) {
+                return item.str;
+              });
+              console.log("## Text Content");
+              //console.log(strings);
+              console.log(strings.join(" "));
+              let pageStr = strings.join(" ").replace(/ {2}/, " "); //replace 2 spaces with one
+              //**need tokenization preprocess to fix spaces within words e.g. "3 rd"
+              pages.push(pageStr);
+              // Release page resources.
+              page.cleanup();
+            })
+            .then(function () {
+              console.log();
+            });
+        });*/
+      } 
+      try {
+        commit('setPdf', {pdf, pages});
+        return true;
+      } catch (err) {
+        return false;
+      }
+      
     }
   },
   modules: {

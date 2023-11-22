@@ -2,14 +2,15 @@
     
     <div id="container" class="column">
         <div id="client-name" class="row column">
-            <h3 style="margin-bottom: 0">Client: {{ currentClient.name }}</h3>
-            <span class="row" style="margin-top: 0; align-text: left; left: 0px; max-width: 80vw; font-size: min(3vh, 2vw)">Showing {{ currentRecords.length }} records of type "{{ recordType }}" out of {{ allRecords.length }} records</span>
+            <h3 v-if="currentClient.name" style="margin-bottom: 0">Client: {{ currentClient.name }}</h3>
+            <span v-if="recordType === 'pdf'">Showing {{ currentRecords.length }} of {{ pages.length }} pages</span>
+            <span v-else class="row" style="margin-top: 0; align-text: left; left: 0px; max-width: 80vw; font-size: min(3vh, 2vw)">Showing {{ currentRecords.length }} records of type "{{ recordType }}" out of {{ allRecords.length }} records</span>
         </div>
         <div id="json-popup" class="inactive">
             <code id="json-container"></code>
             <span v-on:click="hideJson()" style="font-size: 24px">X</span>
         </div>
-        <div class="row buttons" style="margin-top: 2vh;">
+        <div v-if="this.recordType !== 'pdf'" class="row buttons" style="margin-top: 2vh;">
             <div v-if="this.recordType === 'ExplanationOfBenefits'">
                 <span style="z-index: 10" v-on:click="switchRecordTypesToDisplay()">See all records</span>
                 <span v-on:click="sortByProvider()">sort by provider&nbsp;&nbsp;&nbsp;</span>
@@ -29,8 +30,7 @@
         <div id="record-container" class="row">
             <div v-if="this.recordType === 'all'" id="all-records" class="column">
                 <div :id="record.fullUrl" class="record row" :key="record" v-on:click="this.showRecord(record)" v-for="record in currentRecords">
-                    {{ record.resource.resourceType }}
-                    
+                    {{ record.resource.resourceType }}          
                 </div>
             </div>
             
@@ -55,6 +55,12 @@
                             -->
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <div v-if="this.recordType === 'pdf'" id="pdf-pages" class="column">
+                <div v-on:click="revealPage(number)" class="page row" :key="page" v-for="(page, number) in currentRecords" :id="number">
+                    <span style="font-size: min(3vh, 3vw)">p{{ number }}: "{{ page.substr(0, 40) }}..."</span>
                 </div>
             </div>
             <!--<div v-if="relatedRecords[0]">
@@ -87,7 +93,7 @@
             <div id="synonyms" class="column">
                 <div v-if="synonymsUniqueWords.length > 0">
                     <ul>
-                        Unique words of medical synonyms for {{search}} from <a href="https://www.nlm.nih.gov/research/umls/index.html">UMLS</a>
+                        Unique words of medical synonyms for "{{search}}" from <a href="https://www.nlm.nih.gov/research/umls/index.html">UMLS</a>
                         <li v-for="word in synonymsUniqueWords" :key="word">{{ word }}</li>
                     </ul>
                     <!--<span>Synonym words: {{ String(synonymsUniqueWords) }}</span>-->
@@ -106,6 +112,8 @@ import {mapState} from 'vuex'
 import jsonview from '@pgrabovets/json-view'
 import d3 from 'd3'
 //import Vue from 'vue'
+//import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
+import '../../node_modules/pdfjs-dist/build/pdf.worker.mjs'
 
 
 export default {
@@ -121,7 +129,10 @@ export default {
             currentRecords: state => state.currentRecords,
             searchingUMLS: state => state.searchingUMLS,
             medicalSynonyms: state => state.currentSearchMedicalSynonyms,
-            synonymsUniqueWords: state => state.synonymsUniqueWords
+            synonymsUniqueWords: state => state.synonymsUniqueWords,
+            recordType: state => state.currentRecordsType,
+            pdf: state => state.pdf,
+            pages: state => state.pages
         })
     },
     data: function() {
@@ -133,8 +144,8 @@ export default {
             relatedRecords: [],
             currentClaim: {},
             currentRecord: {},
-            medicalSynonyms: [],
-            recordType: "all"
+            medicalSynonyms: []
+            //recordType: ""
             //currentRecords: claims
         }
     },
@@ -287,6 +298,7 @@ export default {
         async submitSearch(search) {
             this.currentClaim = {};
             this.currentRecord = {};
+            this.currentPage = {};
             let currSearch = this.search;
             this.dismissSearch();
             this.search = currSearch;
@@ -302,15 +314,16 @@ export default {
                 this.searching = true;
                 this.currentClaim = {};
                 this.currentRecord = {};
+                this.currentPage = {};
             }
         },
         switchRecordTypesToDisplay() {
             if (this.recordType === 'all') {
                 this.$store.commit('setCurrentRecords', {recs: this.claims, recsType: "ExplanationOfBenefits"});
-                this.recordType = "ExplanationOfBenefits";
+                //this.recordType = "ExplanationOfBenefits";
             } else {
                 this.$store.commit('setCurrentRecords', {recs: this.allRecords, recsType: "all"});
-                this.recordType = "all";
+                //this.recordType = "all";
             }
             this.currentClaim = {};
             this.currentRecord = {};
@@ -322,6 +335,8 @@ export default {
     },
     updated() {
         console.log("update");
+        console.log(this.recordType);
+        console.log(this.pages);
     }
 }
 </script>
@@ -333,7 +348,7 @@ html {
 .column {
   display: flex;
   flex-direction: column;
-  justify-content: space-around;
+  justify-content: flex-start;
 }
 .row {
   display: flex;
@@ -451,5 +466,9 @@ code {
 }
 .service {
     font-size: 1.5vw;
+}
+#synonyms {
+    overflow-y: scroll;
+    max-height: 60vh;
 }
 </style>

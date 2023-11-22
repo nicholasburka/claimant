@@ -20,6 +20,7 @@
     "http": "^0.0.1-security",
     "https": "^1.0.0",
     "path": "^0.12.7",
+    "pdfjs-dist": "^4.0.189",
     "string-comparison": "^1.2.0",
     "vue": "^3.2.13",
     "vue-router": "^4.0.3",
@@ -28,6 +29,7 @@
   "devDependencies": {
     "@babel/core": "^7.12.16",
     "@babel/eslint-parser": "^7.12.16",
+    "@babel/plugin-transform-private-methods": "^7.23.3",
     "@vue/babel-plugin-jsx": "^1.1.5",
     "@vue/cli-plugin-babel": "~5.0.0",
     "@vue/cli-plugin-e2e-cypress": "~5.0.0",

@@ -59,9 +59,11 @@
             </div>
 
             <div v-if="this.recordType === 'pdf'" id="pdf-pages" class="column">
-                <div v-on:click="revealPage(number)" class="page row" :key="page" v-for="(page, number) in currentRecords" :id="number">
-                    <span style="font-size: min(3vh, 3vw)">p{{ number }}: "{{ page.substr(0, 40) }}..."</span>
+                <div v-on:click="this.revealPage(ind + 1)" class="page row" :key="page" v-for="(page,ind) in currentRecords" :id="ind + 1">
+                    <span style="font-size: min(3vh, 3vw)">p{{ ind + 1}}: "{{ page.substr(0, 40) }}..."</span>
                 </div>
+                <button v-if="showingPage" v-on:click="this.dismissPage()" style="z-index: 10; position: absolute; top: 5vh; left: 15vw;">Hide PDF page</button>
+                <canvas v-if="showingPage" id="pdfView" style="position: absolute; top: 5vh; left: 5vw;"></canvas>
             </div>
             <!--<div v-if="relatedRecords[0]">
             <div id="related-records"  class="column">
@@ -113,7 +115,8 @@ import jsonview from '@pgrabovets/json-view'
 import d3 from 'd3'
 //import Vue from 'vue'
 //import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
-import '../../node_modules/pdfjs-dist/build/pdf.worker.mjs'
+import '../../node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs'
+import {toRaw} from 'vue'
 
 
 export default {
@@ -144,7 +147,8 @@ export default {
             relatedRecords: [],
             currentClaim: {},
             currentRecord: {},
-            medicalSynonyms: []
+            medicalSynonyms: [],
+            showingPage: false
             //recordType: ""
             //currentRecords: claims
         }
@@ -327,6 +331,45 @@ export default {
             }
             this.currentClaim = {};
             this.currentRecord = {};
+        },
+        async revealPage(pgNum) {
+            this.showingPage = true;
+            //https://github.com/mozilla/pdf.js/blob/master/examples/learning/helloworld.html
+            let page = await toRaw(this.pdf).getPage(pgNum);
+            let scale = 1.0;
+            let viewport = await page.getViewport({ scale });
+            let canvas = document.getElementById('pdfView');
+            let context = canvas.getContext('2d');
+            let outputScale = window.devicePixelRatio || 1;
+            canvas.width = Math.floor(viewport.width * outputScale);
+            canvas.height = Math.floor(viewport.height * outputScale);
+            canvas.style.width = Math.floor(viewport.width) + "px";
+            canvas.style.height = Math.floor(viewport.height) + "px";
+            const transform = outputScale !== 1
+                ? [outputScale, 0, 0, outputScale, 0, 0,]
+                : null;
+            
+            const renderContext = {
+                canvasContext: context,
+                transform,
+                viewport
+            };
+            page.render(renderContext);
+            //context.font = "32px serif";
+            //context.fillText("X", 40, 100);
+            /*canvas.addEventListener('click', function (evt) {
+                let x = evt.pageX - (canvas.offsetLeft + canvas.clientLeft),
+                    y = evt.pageY - (canvas.offsetTop + canvas.clientTop);
+                    
+                if (x > canvas.width - 40 && y < 40) {
+                    context.clearRect(0,0,canvas.width,canvas.height);
+                    this.showingPage = false;
+
+                }
+            })*/
+        },
+        dismissPage() {
+            this.showingPage = false;
         }
     },
     created() {
@@ -373,6 +416,9 @@ html {
 }
 .claim:hover {
     /*color: lightblue;*/
+    background-color: aquamarine;
+}
+.page:hover {
     background-color: aquamarine;
 }
 .provider {

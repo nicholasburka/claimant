@@ -365,6 +365,7 @@ export default createStore({
       state.encounters = data.encounters;
       state.client = data.client;
       state.organizations = data.organizations;
+      state.currentRecordsType = 'all';
       //add refs to the provider's organization within the provider record
       state.providers.map((p) => {
         //console.log("new p " + p.fullUrl);

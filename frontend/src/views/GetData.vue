@@ -5,21 +5,38 @@
         <!--new client or attach to client - radio choice-->
         <!--form for new client, dropdown for clients to attach to-->
         <div id="upload div" class="column">
-            <p>upload a FHIR R4 JSON file or PDF for the current client</p>
-            <p>the file will be stored in your browser's local storage - only search terms will be transmitted online.</p> <!--we will only store anonymized metadata about search and analyses that you choose to share to help us build our product.</p>-->
-            <input id="fileInput" type="file" class="row">
-            <button v-on:click="readFile()" id="uploadSubmit" type="button" class="row">Validate File</button>
+            <p style="margin-top: 0">upload a FHIR R4 JSON file or PDF</p>
+            <ul style="margin-top: 0; align-self: left;">
+                <li>the app will try to auto-detect if the file is for a new or current client</li>
+                <li>the file will be stored in your browser's local storage - only search terms will be transmitted online</li>
+            </ul>
+             <!--we will only store anonymized metadata about search and analyses that you choose to share to help us build our product.</p>-->
+            <input id="fileInput" type="file" class="row" @change="readFile">
+            <!-- bulk upload drop box -->
+            <!--<button v-on:click="readFile()" id="uploadSubmit" type="button" class="row">Validate File</button>-->
             <h3 v-if="invalidFileType" style="color: red">Invalid file type: not JSON or PDF.</h3>
             <h3 v-if="successfulLoad" style="color: rgb(3, 222, 3)">Loaded file successfully - navigate to Review Data at top of page.</h3>
+            <div v-if="validatedFile">
+                <h3 v-if="detectedPatientName">Patient: {{ detectedPatientName }}</h3>
+                <select v-else>
+                    <option>No Client Assigned</option>
+                    <option v-on:click="newClientForm()">New Client</option>
+                    <option v-for="client in clients" :key="client">{{ client.name }}</option>
+                </select>
+            </div>
+            <div v-if="newClient">Client name: <input type="text" v-model="newClientName"></div>
             <div id="jsonFileDetails">
                 <h3 v-if="uploadedJson && fhirResourceType">Detected FHIR Resource of Type: {{ fhirResourceType }} </h3>
-                <h3 v-if="detectedPatientName">Patient: {{ detectedPatientName }}</h3>
                 <h3 v-if="numRecords">Record count: {{ numRecords }}</h3>
                 <h3 v-if="recordTypes">Record types: {{ recordCounts }}</h3>
-                <button v-if="uploadedJson && fhirResourceType" v-on:click="setClient()">Confirm & Upload as New Client</button>
+                <div>
+                    <h3 v-if="uploadedJson" id="fhirNewClient" style="color: blue">New Client: {{ fhirNewClient }}</h3>
+                </div>
+                <button v-if="uploadedJson && fhirResourceType" v-on:click="loadClient()">Confirm Load FHIR</button>
             </div>
             <div id="pdfFileDetails">
                 <h3 v-if="numPages > 0">Page count: {{ numPages }}</h3>
+                
                 <button v-on:click="setPdf()" v-if="validatedPdf">Confirm Load PDF for Analysis</button>
             </div>
 
@@ -36,7 +53,7 @@
 
 <script>
 import {mapState} from 'vuex'
-import {levenshtein} from 'string-comparison'
+import stringComparison from 'string-comparison'
 //import { thresholdSturges } from 'd3';
 //import * as pdf from 'pdfjs-dist'
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
@@ -46,28 +63,52 @@ import '../../node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs'
 //pdf.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 function similarNames(name1, name2) {
-    return levenshtein.similarity(name1, name2) > .55;
+    return stringComparison.levenshtein.similarity(name1, name2) > .55;
 }
 
 export default {
     computed: {
         ...mapState({
             client: state => state.currentClient,
-            oneUpClientId: state => state.oneUpClientId
+            oneUpClientId: state => state.oneUpClientId,
+            clients: state => state.clients
         })
     },
     data: function() {
         return {
-            uploadedJson: {},
+            uploadedJson: undefined, //for boolean checks, but type === {}
             fhirResourceType: "",
             successfulLoad: false,
             invalidFileType: false,
+            detectedPatientName: "",
             numPages: 0,
+            validatedFile: false,
             validatedPdf: false,
-            pdf: {}
+            pdf: undefined, //{}
+            fhirNewClient: false
         }
     },
     methods: {
+        refreshValidationFlow() {
+            this.validatedFile = false;
+            this.validatedPdf = false;
+            this.uploadedJson = undefined; //{}
+            this.successfulLoad = false;
+            this.invalidFileType = false;
+            this.detectedPatientName = "";
+            this.numPages = 0;
+            this.pdf = undefined; //{}
+            this.fhirNewClient = false; //for FHIR flow only
+        },
+        checkIffhirNewClient(clientName) {
+            //console.log(stringComparison.levenshtein.similarity("Aaron Brekke", "Aaron Brkke")); //~.9
+            //console.log(stringComparison.levenshtein.similarity("Aaron435 Brekke50", "Aaron Brekke")); // ~.68
+            let threshold = .65;
+            let ind = this.clients.findIndex((client) => (stringComparison.levenshtein.similarity(client.name, clientName) > threshold));
+            console.log(this.clients);
+            console.log(ind);
+            return { fhirNewClient: (ind < 0), oldClientIndex: ind };
+        },
         async requestData(clientName) {
             let oneUpProviderId = "";
             switch (clientName) {
@@ -154,6 +195,7 @@ export default {
 
         },
         async readFile() {
+            this.refreshValidationFlow();
             this.invalidFileType = false;
             let inputFile = document.querySelector("input").files[0];
             if (inputFile.type !== "application/pdf" && (inputFile.type !== "application/json")) {
@@ -179,11 +221,15 @@ export default {
                             this.fhirResourceType = json.resourceType.toLowerCase();
                             if (this.fhirResourceType === "bundle") {
                                 this.detectedPatientName = this.getPatientNameFromBundle(this.uploadedJson);
+                                let fhirNewClientCheck = this.checkIffhirNewClient(this.detectedPatientName);
+                                this.fhirNewClient = fhirNewClientCheck.fhirNewClient;
+                                this.oldClient = this.clients[fhirNewClientCheck.oldClientIndex];
                                 //this.newPatient = (this.$store.clients.filter((client) => client.name === this.detectedPatientName).length === 0);
                                 this.numRecords = this.uploadedJson.entry.length;
                                 let typeObj = this.getRecordTypesInBundle(this.uploadedJson);
                                 this.recordTypes = typeObj.recordTypes;
                                 this.recordCounts = typeObj.recordCounts;
+                                this.validatedFile = true;
                                 console.log(this.recordCounts);
                             }
                             //import('js-fhir-validator/r4/js/' + this.fhirResourceType.toLowerCase()).then(res => console.log(res));
@@ -221,6 +267,7 @@ export default {
                         console.log("num pages: " + doc.numPages);
                         data.pdf = doc;
                         data.validatedPdf = true;
+                        data.validatedFile = true;
                     })
 
                 }
@@ -231,17 +278,23 @@ export default {
             
             //fileReader.readAsText(input);
         },
-        async setClient() {
-            let loadedSuccessfully = await this.$store.dispatch('loadClientFromUpload', this.uploadedJson);
+        async loadClient() {
+            let loadedSuccessfully = await this.$store.dispatch('loadClientFromUpload', {data: this.uploadedJson, newClient: this.fhirNewClient});
             this.successfulLoad = loadedSuccessfully;
         },
         async setPdf() {
             let loadedSuccessfully = await this.$store.dispatch('loadPdfFromUpload', this.pdf);
             this.successfulLoad = loadedSuccessfully;
+        },
+        newClientForm() {
+            this.newClient = true;
         }
     }
 }
 </script>
 
 <style>
+#fileInput {
+    align-self: center;
+}
 </style>

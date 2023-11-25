@@ -262,19 +262,30 @@ function sortRecsIntoTypes(recs) {
   this.dataSource = params.dataSource;
   //this.
 }*/
-
+/*
+PDF NLP: 
+- name detection
+- date detection
+- type of doc
+*/
+/** need to make the store abstract over different record types for client, 
+ ** and then allow the ClientDataView to allow search over every type of record at once
+ */
 export default createStore({
   state: {
     repId: "",
-    currentClient: {},
+    currentClient: {}, //**move all currents into current client */
     clientDataLoaded: false,
     clients: [{
         name: "Aaron Brekke",
-        dataUrl: "../../data/AaronBrekke/Aaron697_Brekke496_2fa15bc7-8866-461a-9000-f739e425860a"
+        dataUrl: "../../data/AaronBrekke/Aaron697_Brekke496_2fa15bc7-8866-461a-9000-f739e425860a",
+        localDataSaved: false
       }, {
         name: "Youlanda Hettinger",
-        dataUrl: "../../data/YoulandaHettinger/Youlanda785_Hettinger594_7fe3fe78-f363-4c13-95ae-a05df266448a"
+        dataUrl: "../../data/YoulandaHettinger/Youlanda785_Hettinger594_7fe3fe78-f363-4c13-95ae-a05df266448a",
+        localDataSaved: false
       }],
+    availableClients: [], //**delete??
     oneUpClientId: "f987107a279a13583cc6feeb0e28ec0c",
     oneUpAccessToken: "",
     claims: [],
@@ -282,7 +293,7 @@ export default createStore({
     providers: [],
     currentRecords: [],
     currentRecordsType: "all",
-    availableClients: [],
+    //searchResults: [],
     umlsSearches: {}, //**maps search terms to search results
     searchingUMLS: false,
     currentSearchMedicalSynonyms: [],
@@ -346,10 +357,12 @@ export default createStore({
     }*/
   },
   mutations: {
+    addClient(state, client) {
+      state.clients.push(client);
+    },
     setClient(state, data) {
       console.log("setClient mutation with data: ");
       console.log(data);
-      state.currentClient = data.currentClient;
       state.allRecords = data.allRecords;
       state.allRecordsById = data.allRecordsById;
       state.claims = data.claims;
@@ -363,7 +376,6 @@ export default createStore({
      // state.records = state.records.map((rec, ind) => rec.ind = ind);
       state.providers = data.providers;
       state.encounters = data.encounters;
-      state.client = data.client;
       state.organizations = data.organizations;
       state.currentRecordsType = 'all';
       //add refs to the provider's organization within the provider record
@@ -711,7 +723,6 @@ export default createStore({
       //in the vue, route to data vue
     },
     async loadTestClientFromDisk({state, commit, dispatch}) {
-      let name = "AaronBrekke";
       //let filename = "Aaron697_Brekke496_2fa15bc7-8866-461a-9000-f739e425860a.json";
       //let res = await fs.readFile('../../data/' + name + "/" + filename);
       console.log("test data");
@@ -731,14 +742,16 @@ export default createStore({
       let typedRecs = sortRecsIntoTypes(recs);
       //make an array of all resource types (non-repeating)
       //make a dict where they're all sorted into their resource type
-      commit('setClient', {
-        name,
+      let currentClient = {
+        name: nameString(typedRecs.client.resource),
         allRecords: recs,
         allRecordsById: recsById,
-        currentClient: {name: nameString(typedRecs.client.resource)},
-        //claims: recs.filter((rec) => rec.resource.resourceType === "ExplanationOfBenefit"),
-        //currentRecords: recs.filter((rec) => rec.resource.resourceType === "ExplanationOfBenefit"),
-        ...typedRecs
+        ...typedRecs,
+        hasData: true
+      };
+      commit('setClient', {
+        ...currentClient,
+        currentClient
       });
 
       console.log(state.claims);
@@ -747,22 +760,28 @@ export default createStore({
 
       dispatch('loadTestClientFrom1up');
     },
-    async loadClientFromUpload({commit}, clientData) {
-      let recs = await clientData.entry;
+    async loadClientFromUpload({commit}, {data, newClient}) {
+      let recs = await data.entry;
       let mappedRecs = mapAllRefsInRecs(recs);
       recs = mappedRecs.recs;
       let recsById = mappedRecs.recsById;
       let typedRecs = sortRecsIntoTypes(recs);
       let name = typedRecs.client.name;
-      let currentClient = {name};
-      try {
-        commit('setClient', {
+      let currentClient = {
           name,
           allRecords: recs,
           allRecordsById: recsById,
-          currentClient,
-          ...typedRecs
+          ...typedRecs,
+          hasData: true
+      };
+      if (newClient) {
+        commit('addClient', {
+          ...currentClient,
+          currentClient
         })
+      }
+      try {
+        commit('setClient', currentClient);
         return true;
       } catch (err) {
         console.log("could not setClient with loaded JSON");

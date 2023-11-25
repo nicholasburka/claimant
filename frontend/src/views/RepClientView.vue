@@ -19,7 +19,7 @@ export default {
     },
     data: function() {
         return {
-            clients: [{
+            /*clients: [{
                 name: "Aaron Brekke",
                 hasData: false,
                 dataUrl: "../../data/AaronBrekke/Aaron697_Brekke496_2fa15bc7-8866-461a-9000-f739e425860a"
@@ -27,7 +27,7 @@ export default {
                 name: "Youlanda Hettinger",
                 hasData: false,
                 dataUrl: "../../data/YoulandaHettinger/Youlanda785_Hettinger594_7fe3fe78-f363-4c13-95ae-a05df266448a"
-            }]
+            }]*/
             // n
         }
     },

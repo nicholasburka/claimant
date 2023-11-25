@@ -38,16 +38,16 @@
                 <div class="claim row" :key="claim" v-for="claim in currentRecords" :id="claim.fullUrl">
                     <div><span v-on:click.self="this.showEob(claim)">EoB {{ claim.index }}: </span>
                         <div v-if="claim.resource.item">
-                            <span v-if="claim.resource.item[0]" v-on:click.self="this.showEob(claim)">{{ claim.resource.item[0].servicedPeriod.start }}</span>
+                            <span v-if="claim.resource.item[0]" v-on:click.self="this.showEob(claim)">{{ claim.resource.item[0].servicedPeriod.start + " – "}}</span>
                             <span v-else v-on:click.self="this.showEob(claim)">{{ " " + claim.resource.item.servicedPeriod.start  +", "}}</span>
-                            <span class="provider" v-on:click="showProvider(claim.resource.provider.reference)">{{ " " + this.getProvider(claim.resource.provider.reference) + ", "}}</span>
+                            <span class="provider" v-on:click="showProvider(claim.resource.provider.reference)">{{ "" + this.getProvider(claim.resource.provider.reference) + ", "}}</span>
                             <div :id="claim.fullUrl + service" class="service" v-on:click.self="this.showEob(claim)">
-                                <div v-if="claim.resource.item[0]">
-                                    <span style="color:purple" v-on:click.self="this.showEob(claim)">Products/Services claimed: </span>
-                                    <span v-for="item in claim.resource.item" :key="item" v-on:click.self="this.showEob(claim)">
-                                        {{ item.productOrService.text + ", "}}
-                                    </span>
-                                </div>
+                                <span style="color:purple;" v-on:click.self="this.showEob(claim)">Products/Services claimed: </span>
+                                <ul style="margin: 0" v-if="claim.resource.item[0]">
+                                    <li v-for="item in claim.resource.item" :key="item" v-on:click.self="this.showEob(claim)">
+                                        <span style="margin: 0">{{ item.productOrService.text }}<!--span v-if="ind < (claim.resource.item.length - 1)">{{ ", " }}</span>--></span>
+                                    </li>
+                                </ul>
                                 <span v-else v-on:click.self="this.showEob(claim)">{{ claim.resource.item.productOrService.text }}</span>
                             </div>
                             <!--<span style="font-size:5px" :key="item" v-for="item in claim.resource.item">{{ item.servicedPeriod.start + "   "}}</span>-->

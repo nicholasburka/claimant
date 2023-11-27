@@ -812,6 +812,7 @@ export default createStore({
       let serverResp = await fetch(requestUrl);
       console.log(serverResp);
       let clientData = await serverResp.json();
+      console.log(clientData);
       try {
         await dispatch('loadClientFromUpload', clientData);
         return true;

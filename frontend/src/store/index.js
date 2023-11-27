@@ -773,15 +773,6 @@ export default createStore({
 
       dispatch('loadTestClientFrom1up');
     },
-    async loadClientDataFromServer({commit}, client) {
-      const serverUrl = "https://sandbox.claimant.us";
-      const requestUrl = serverUrl + "/client?loc=" + encodeURIComponent(client.dataUrl);
-      console.log("requesting client data from server: " + requestUrl);
-      let serverResp = await fetch(requestUrl);
-      console.log(serverResp);
-      let clientWithData = {};
-      commit('setClient', clientWithData);
-    },
     async loadClientDataFromLocalStorage({commit}, client) {
       commit('setClient', client);
     },
@@ -810,6 +801,22 @@ export default createStore({
         return true;
       } catch (err) {
         console.log("could not setClient with loaded JSON");
+        console.log(err);
+        return false;
+      }
+    },
+    async loadClientDataFromServer({dispatch}, client) {
+      const serverUrl = "https://sandbox.claimant.us";
+      const requestUrl = serverUrl + "/client?loc=" + encodeURIComponent(client.dataUrl);
+      console.log("requesting client data from server: " + requestUrl);
+      let serverResp = await fetch(requestUrl);
+      console.log(serverResp);
+      let clientData = await serverResp.json();
+      try {
+        await dispatch('loadClientFromUpload', clientData);
+        return true;
+      } catch (err) {
+        console.log("could not use fetched json to setClient");
         console.log(err);
         return false;
       }

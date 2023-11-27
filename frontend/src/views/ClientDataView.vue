@@ -17,7 +17,15 @@
                 <span v-on:click="sortByDate()">sort by date&nbsp;&nbsp;&nbsp;</span>
                 <span v-on:click="reverseClaims()">reverse list</span>
             </div>
-            <span v-else style="z-index: 10" v-on:click="switchRecordTypesToDisplay()">See only EoB claims</span>
+            <div v-else>
+                <span v-on:click="switchRecordTypesToDisplay()" style="z-index: 10" >
+                    See only EoB claims
+                </span>
+                <span v-on:click="sortByType()">
+                    Sort by type of FHIR resource
+                </span>
+                <span v-on:click="reverseAllRecords()">reverse list</span>
+            </div>
         </div>
         <div class="row">
                 <input style="width: 40vw;" type="text" v-model="search" @keyup.enter="submitSearch(search)"/>
@@ -291,8 +299,14 @@ export default {
             this.$store.commit('sortBy', {toSort: 'claims', sortVar: 'date'});
             //window.location.reload();
         },
+        sortByType() {
+            this.$store.commit('sortBy', {toSort: 'allRecords', sortVar: 'resourceType'});
+        },
         reverseClaims() {
             this.$store.commit('reverse', 'claims');
+        },
+        reverseAllRecords() {
+            this.$store.commit('reverse', 'allRecords');
         },
         dismissSearch() {
             this.$store.commit('dismissSearch');

@@ -26,17 +26,16 @@
             </div>
             <div v-if="newClient">Client name: <input type="text" v-model="newClientName"></div>
             <div id="jsonFileDetails">
+                <button v-if="uploadedJson && fhirResourceType" v-on:click="loadClient()">Confirm Load FHIR</button>
                 <h3 v-if="uploadedJson && fhirResourceType">Detected FHIR Resource of Type: {{ fhirResourceType }} </h3>
                 <h3 v-if="numRecords">Record count: {{ numRecords }}</h3>
                 <h3 v-if="recordTypes">Record types: {{ recordCounts }}</h3>
                 <div>
                     <h3 v-if="uploadedJson" id="fhirNewClient" style="color: blue">New Client: {{ fhirNewClient }}</h3>
                 </div>
-                <button v-if="uploadedJson && fhirResourceType" v-on:click="loadClient()">Confirm Load FHIR</button>
             </div>
             <div id="pdfFileDetails">
                 <h3 v-if="numPages > 0">Page count: {{ numPages }}</h3>
-                
                 <button v-on:click="setPdf()" v-if="validatedPdf">Confirm Load PDF for Analysis</button>
             </div>
 

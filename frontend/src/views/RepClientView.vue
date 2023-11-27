@@ -1,9 +1,9 @@
 <template>
     <div id="RepClientList" class="column">
         <div class="client row" v-for="client in clients" :key="client" v-on:click="chooseClient(client)">
-            <h2>{{ client.name }}</h2>
-            <h3 v-if="client.hasData">Review Records</h3>
-            <h3 v-else>Request Records</h3>
+            <h2>{{ client.name }} </h2>
+            <h2 v-if="client.hasData">–– Review Records</h2>
+            <h2 v-else>–– Request Records</h2>
         </div>
     </div>
 </template>
@@ -33,9 +33,18 @@ export default {
     },
     methods: {
         chooseClient(client) {
-            this.$store.commit('setClient', client)
             if (client.hasData) {
-                //route to data view
+                if (!client.allRecords) {
+                    if (client.localStorage) {
+                        this.$store.dispatch('loadClientDataFromLocalStorage', client);
+                    } else if (client.dataUrl) {
+                        this.$store.dispatch('loadClientDataFromServer', client);
+                    }
+                }  else {
+                    //route to data view
+                    this.$store.commit('setClient', client)
+                }
+                
             } else {
                 //route to request view
             }

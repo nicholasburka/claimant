@@ -279,11 +279,13 @@ export default createStore({
     clients: [{
         name: "Aaron Brekke",
         dataUrl: "../../data/AaronBrekke/Aaron697_Brekke496_2fa15bc7-8866-461a-9000-f739e425860a",
-        localDataSaved: false
+        localDataSaved: false,
+        hasData: true
       }, {
         name: "Youlanda Hettinger",
         dataUrl: "../../data/YoulandaHettinger/Youlanda785_Hettinger594_7fe3fe78-f363-4c13-95ae-a05df266448a",
-        localDataSaved: false
+        localDataSaved: false,
+        hasData: true
       }],
     availableClients: [], //**delete??
     oneUpClientId: "f987107a279a13583cc6feeb0e28ec0c",
@@ -361,6 +363,12 @@ export default createStore({
       state.clients.push(client);
     },
     setClient(state, data) {
+      if (!data.hasData) {
+        return;
+      } 
+      if (data.hasData && data.dataUrl && !data.allRecords) {
+        //load
+      }
       console.log("setClient mutation with data: ");
       console.log(data);
       state.allRecords = data.allRecords;
@@ -446,6 +454,9 @@ export default createStore({
         'claims': {
           'provider': ['resource', 'provider', 'reference'],
           'date': ['resource', 'item', 'servicedPeriod', 'start']
+        },
+        'allRecords': {
+          'resourceType': ['resource', 'resourceType']
         }
       }//params.sortVarPath;
       let sortVarPath = sortVarPaths[toSort][sortVar];
@@ -479,6 +490,7 @@ export default createStore({
         }
       }
       state[toSort] = state[toSort].toSorted((a,b) => varCompare(a,b,sortVarPath));
+      state.currentRecords = state[toSort];
       console.log("sorted: ");
       console.log(state[toSort].map((el) => getVarFromObj(el, sortVarPath)));
       /*switch (param) {
@@ -504,6 +516,7 @@ export default createStore({
       } else if (state.currentRecordsType === "pdf") {
         state.currentRecords = state.pages;
       }
+      state.searchingUMLS = false;
       state.synonymsUniqueWords = [];
     },
     searchCurrentRecords(state, {searchStr, currRecType}) {
@@ -759,6 +772,18 @@ export default createStore({
       console.log(state.providers);
 
       dispatch('loadTestClientFrom1up');
+    },
+    async loadClientDataFromServer({commit}, client) {
+      const serverUrl = "sandbox.claimant.us";
+      const requestUrl = serverUrl + "/client?loc=" + encodeURIComponent(client.dataUrl);
+      console.log("requesting client data from server: " + requestUrl);
+      let serverResp = await fetch(requestUrl);
+      console.log(serverResp);
+      let clientWithData = {};
+      commit('setClient', clientWithData);
+    },
+    async loadClientDataFromLocalStorage({commit}, client) {
+      commit('setClient', client);
     },
     async loadClientFromUpload({commit}, {data, newClient}) {
       let recs = await data.entry;

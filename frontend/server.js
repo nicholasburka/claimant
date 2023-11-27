@@ -16,6 +16,7 @@ app.use(express.json());
 app.use(express.static('dist'));
 app.use(express.static('./'));
 app.use(serveStatic(path.join(__dirname, 'dist')));
+app.use(serveStatic(path.join(__dirname, 'data')));
 
 app.get('/', async (req, res) => {
     const reject = () => {
@@ -63,6 +64,22 @@ app.get('/claimant', async (req, res) => {
         return reject();
     } else {
         res.sendFile(path.join(__dirname, '/dist/index.html'));
+    }
+});
+
+app.get('/client', async (req, res) => {
+    console.log("get client");
+    let loc = req.query.loc;
+    try {
+        let serverClientData = await fs.readFile(loc);
+        console.log("got file");
+        console.log(serverClientData);
+        res.send(serverClientData);
+    } catch (err) {
+        console.log("could not get file");
+        console.log(err);
+        res.sendStatus(500);
+        //
     }
 });
 

@@ -38,7 +38,8 @@
         <div id="record-container" class="row">
             <div v-if="this.recordType === 'all'" id="all-records" class="column">
                 <div :id="record.fullUrl" class="record row" :key="record" v-on:click="this.showRecord(record)" v-for="record in currentRecords">
-                    {{ record.resource.resourceType }}          
+                    {{ record.resource.resourceType }} 
+                    <span v-if="record.searchResult && record.searchResult.search === this.search"> – "{{record.searchResult.uniqueElementText[0]}}"</span>         
                 </div>
             </div>
             

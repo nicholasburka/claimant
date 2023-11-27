@@ -1,9 +1,11 @@
 <template>
     <div id="RepClientList" class="column">
+        <h3 v-if="loadSuccess" style="color: green">Client data loaded, navigate to Review Data</h3>
         <div class="client row" v-for="client in clients" :key="client" v-on:click="chooseClient(client)">
             <h2>{{ client.name }} </h2>
             <h2 v-if="client.hasData">–– Review Records</h2>
             <h2 v-else>–– Request Records</h2>
+            
         </div>
     </div>
 </template>
@@ -19,6 +21,7 @@ export default {
     },
     data: function() {
         return {
+            loadSuccess: false
             /*clients: [{
                 name: "Aaron Brekke",
                 hasData: false,
@@ -32,13 +35,14 @@ export default {
         }
     },
     methods: {
-        chooseClient(client) {
+        async chooseClient(client) {
+            this.loadSuccess = false;
             if (client.hasData) {
                 if (!client.allRecords) {
                     if (client.localStorage) {
                         this.$store.dispatch('loadClientDataFromLocalStorage', client);
                     } else if (client.dataUrl) {
-                        this.$store.dispatch('loadClientDataFromServer', client);
+                        this.loadSuccess = await this.$store.dispatch('loadClientDataFromServer', client);
                     }
                 }  else {
                     //route to data view

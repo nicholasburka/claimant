@@ -20,8 +20,42 @@ function nameString(resource) {
 }
 
 function searchAllLeafsForStr(resource, str) {
-  console.log(resource);
-  console.log(str);
+  let matches = []; // {path: [], elementText: ""}
+  let uniqueElementText = [];
+  let props = Object.keys(resource);
+  props.forEach((prop) => {
+    if (typeof(resource[prop]) === "string") {
+      if (resource[prop].indexOf(str) >= 0) {
+        matches.push({path: [prop], elementText: resource[prop]});
+        if (uniqueElementText.indexOf(resource[prop] < 0)){
+          uniqueElementText.push(resource[prop]);
+        }
+        //console.log("match");
+        //console.log(matches);
+        //console.log(uniqueElementText);
+      }
+    } else if (typeof(resource[prop]) === "object") {
+      //includes arrays: Object.keys([1,2]) => ["0", "1"]
+      let sub = searchAllLeafsForStr(resource[prop], str);
+      console.log(sub);
+      let mapped = sub["matches"].map((el) => {
+        //console.log("within matches, the element to map");
+        //console.log(el);
+        if (el === undefined) {
+          return undefined;
+        }
+        return {path: [prop].concat(el.path), elementText: el.elementText}});
+      //console.log(mapped);
+      matches = matches.concat(mapped["matches"]);
+      uniqueElementText = uniqueElementText.concat(sub["uniqueElementText"].filter((el => uniqueElementText.indexOf(el) < 0)));
+    } else {
+      //
+    }
+  })
+  //console.log(resource);
+  //console.log(str);
+  //console.log(matches);
+  return {matches, uniqueElementText};
 }
 
 function getAllRefsWithinResource(resource) {
@@ -277,12 +311,12 @@ export default createStore({
     currentClient: {}, //**move all currents into current client */
     clientDataLoaded: false,
     clients: [{
-        name: "Aaron Brekke",
+        name: "Aaron Brekke (Test Client 1)",
         dataUrl: "/data/AaronBrekke/Aaron697_Brekke496_2fa15bc7-8866-461a-9000-f739e425860a.json",
         localDataSaved: false,
         hasData: true
       }, {
-        name: "Youlanda Hettinger",
+        name: "Youlanda Hettinger (Test Client 2)",
         dataUrl: "/data/YoulandaHettinger/Youlanda785_Hettinger594_7fe3fe78-f363-4c13-95ae-a05df266448a.json",
         localDataSaved: false,
         hasData: true
@@ -551,7 +585,18 @@ export default createStore({
       state.currentRecords = state.currentRecords.filter((rec) => {
         return (JSON.stringify(rec).toLowerCase().indexOf(searchStrL) >= 0)
       });
-      searchAllLeafsForStr(state.currentRecords[0], searchStr);
+      state.currentRecords.forEach((rec) => {
+        let searchRes = searchAllLeafsForStr(rec, searchStr);
+        rec.searchResult = {
+          search: searchStr,
+          matches: searchRes.matches,
+          uniqueElementText: searchRes.uniqueElementText
+        }
+      });
+      //let searchRes = searchAllLeafsForStr(state.currentRecords[0], searchStr);
+      //console.log("search all leafs");
+      //console.log(searchRes);
+      //searchAllLeafsForStr(state.current)
       console.log(state.currentRecords.length);
       
     },

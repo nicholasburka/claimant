@@ -814,7 +814,7 @@ export default createStore({
       let clientData = await serverResp.json();
       console.log(clientData);
       try {
-        await dispatch('loadClientFromUpload', clientData);
+        await dispatch('loadClientFromUpload', {data: clientData, newClient: false});
         return true;
       } catch (err) {
         console.log("could not use fetched json to setClient");

@@ -774,7 +774,7 @@ export default createStore({
       dispatch('loadTestClientFrom1up');
     },
     async loadClientDataFromServer({commit}, client) {
-      const serverUrl = "sandbox.claimant.us";
+      const serverUrl = "https://sandbox.claimant.us";
       const requestUrl = serverUrl + "/client?loc=" + encodeURIComponent(client.dataUrl);
       console.log("requesting client data from server: " + requestUrl);
       let serverResp = await fetch(requestUrl);

@@ -1,6 +1,6 @@
 import { createStore } from 'vuex'
 //import fs from 'fs'
-import testData from "../../data/AaronBrekke/Aaron697_Brekke496_2fa15bc7-8866-461a-9000-f739e425860a";
+import testData from "/data/AaronBrekke/Aaron697_Brekke496_2fa15bc7-8866-461a-9000-f739e425860a";
 import {toRaw} from 'vue'
 
 
@@ -278,12 +278,12 @@ export default createStore({
     clientDataLoaded: false,
     clients: [{
         name: "Aaron Brekke",
-        dataUrl: "../../data/AaronBrekke/Aaron697_Brekke496_2fa15bc7-8866-461a-9000-f739e425860a",
+        dataUrl: "/data/AaronBrekke/Aaron697_Brekke496_2fa15bc7-8866-461a-9000-f739e425860a",
         localDataSaved: false,
         hasData: true
       }, {
         name: "Youlanda Hettinger",
-        dataUrl: "../../data/YoulandaHettinger/Youlanda785_Hettinger594_7fe3fe78-f363-4c13-95ae-a05df266448a",
+        dataUrl: "/data/YoulandaHettinger/Youlanda785_Hettinger594_7fe3fe78-f363-4c13-95ae-a05df266448a",
         localDataSaved: false,
         hasData: true
       }],

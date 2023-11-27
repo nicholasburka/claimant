@@ -71,7 +71,7 @@ app.get('/client', async (req, res) => {
     console.log("get client");
     let loc = req.query.loc;
     try {
-        let serverClientData = fs.readFileSync(loc);
+        let serverClientData = fs.readFileSync(path.join(__dirname, loc));
         console.log("got file");
         console.log(serverClientData);
         res.send(serverClientData);
